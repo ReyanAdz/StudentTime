@@ -1,14 +1,14 @@
 import React from 'react';
-import './style.css'; 
 
 function Home() {
   return (
     <>
       <header className="navbar">
-        <div className="logo">StudentTime</div>
+      <div className="logo">
+            <img src="/src/assets/logo.png" alt="StudentTime Logo" className="logo-img" />
+             <span>StudentTime</span>
+        </div>
         <nav>
-          <a href="#">Features</a>
-          <a href="#">Pricing</a>
           <a href="#">About</a>
           <a href="#" className="login">Log In</a>
           <a href="#" className="signup">Sign Up</a>
@@ -24,7 +24,6 @@ function Home() {
           </p>
           <div className="cta-buttons">
             <a href="#" className="btn primary">Get Started</a>
-            <a href="#" className="btn secondary">Learn More</a>
           </div>
         </div>
       </section>
@@ -32,15 +31,11 @@ function Home() {
       <section className="features">
         <div className="feature">
           <h2>✨ Clean Visual Planner</h2>
-          <p>
-            Drag and drop your classes, tasks, and events into a beautiful weekly view.
-          </p>
+          <p>Drag and drop your classes, tasks, and events into a beautiful weekly view.</p>
         </div>
         <div className="feature">
           <h2>📅 Calendar Sync</h2>
-          <p>
-            Connect with Google Calendar or iCal to see everything in one place.
-          </p>
+          <p>Connect with Google Calendar or iCal to see everything in one place.</p>
         </div>
         <div className="feature">
           <h2>💡 Smart Reminders</h2>
