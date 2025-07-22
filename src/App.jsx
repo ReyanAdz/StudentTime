@@ -1,8 +1,9 @@
-import React from "react";
-import Home from "./components/Home";
+import React, { useState } from "react";
+import Home from "./components/home";
 
 function App() {
-  return <Home />;
+  const [events, setEvents] = useState([]);
+  return <Home events={events} setEvents={setEvents} />;
 }
 
 export default App;
