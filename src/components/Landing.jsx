@@ -1,5 +1,4 @@
 import React from 'react';
-import CalendarView from "./CalendarView";
 
 function Home({ events, setEvents }) {
   return (
@@ -43,8 +42,6 @@ function Home({ events, setEvents }) {
           <p>Get notified before deadlines or when it's time to study.</p>
         </div>
       </section>
-
-      <CalendarView events={events} setEvents={setEvents} />
 
       <footer className="footer">
         <p>&copy; 2025 StudentTime. All rights reserved.</p>

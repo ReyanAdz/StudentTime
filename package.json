@@ -22,8 +22,11 @@
   },
   "homepage": "https://github.com/CMPT-276-SUMMER-2025/final-project-3-rivers#readme",
   "dependencies": {
+    "date-fns": "^4.1.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-big-calendar": "^1.19.4",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.7.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.6.0",
