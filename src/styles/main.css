@@ -131,3 +131,18 @@ nav .signup:hover {
   font-size: 0.9rem;
   color: #777;
 }
+
+.rbc-month-row {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.rbc-event {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rbc-day-bg {
+  overflow-y: auto;
+}

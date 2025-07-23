@@ -458,22 +458,40 @@ function CalendarView(props) {
       {/* Calendar */}
       <div style={{ height: '80vh' }}>
         <Calendar
-          localizer={localizer}
-          events={calEvents}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ backgroundColor: 'white' }}
-          selectable
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          defaultView="month"
-          popup
-          date={currentDate}
-          onNavigate={(date) => setCurrentDate(date)}
+            localizer={localizer}
+            events={calEvents}
+            components={{ event: CustomEvent }}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ backgroundColor: 'white' }}
+            selectable
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+            defaultView="month"
+            views={['month', 'week', 'day', 'agenda']}
+            popup
+            showMultiDayTimes
+            dayLayoutAlgorithm="no-overlap"
+            date={currentDate}
+            onNavigate={(date) => setCurrentDate(date)}
         />
       </div>
     </div>
   );
 }
+function CustomEvent({ event }) {
+  const start = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const end = event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const campus = event?.title?.match(/\((.*?)\)/)?.[1] || '';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
+      <strong>{event.title.replace(/\s*–.*?\(.*?\)/, '').trim()}</strong>
+      <span>{start} – {end}</span>
+      {campus && <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>{campus} Campus</span>}
+    </div>
+  );
+}
+
 
 export default CalendarView;
