@@ -367,11 +367,12 @@ function CalendarView(props) {
   }
 
   const newEvent = {
-    title,
-    start: startTime,
-    end: endTime,
-    allDay: false,
-  };
+  id: `${startTime.toISOString()}-${title}-${Math.random().toString(36).slice(2)}`,  // generate unique ID
+  title,
+  start: startTime,
+  end: endTime,
+  allDay: false,
+};
 
   updateEvents(prev => [...prev, newEvent]);
 };
