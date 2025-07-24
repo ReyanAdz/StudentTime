@@ -344,22 +344,38 @@ function CalendarView(props) {
   };
 
   /* ----- manual click-to-add event ----- */
-  const handleSelectSlot = ({ start, end }) => {
-    const title = window.prompt('New Event Title');
-    if (title) {
-      updateEvents(prev => [
-        ...prev,
-        {
-          id: `manual-${start.getTime()}-${end.getTime()}`,
-          title,
-          start,
-          end,
-          allDay: false,
-          eventType: 'manual',
-        },
-      ]);
-    }
-  };
+  const handleSelectSlot = ({ start }) => {
+  const title = window.prompt("New Event Title:");
+  if (!title) return;
+
+  const timeStr = window.prompt("Start time? (HH:MM 24hr)", "23:59");
+  if (!timeStr) return;
+
+  const [hour, minute] = timeStr.split(":").map(Number);
+  const startTime = new Date(start);
+  startTime.setHours(hour, minute, 0);
+
+  const endTimeStr = window.prompt("End time? (optional, HH:MM 24hr — press Enter to skip):");
+
+  let endTime;
+  if (endTimeStr) {
+    const [endHour, endMinute] = endTimeStr.split(":").map(Number);
+    endTime = new Date(start);
+    endTime.setHours(endHour, endMinute, 0);
+  } else {
+    endTime = new Date(startTime); // use same as start if left blank
+  }
+
+  const newEvent = {
+    title,
+    start: startTime,
+    end: endTime,
+    allDay: false,
+  };
+
+  updateEvents(prev => [...prev, newEvent]);
+};
+
 
   /* ----- click existing event -> delete options ----- */
   const handleSelectEvent = (eventObj /*, e */) => {
@@ -472,6 +488,8 @@ function CalendarView(props) {
             popup
             showMultiDayTimes
             dayLayoutAlgorithm="no-overlap"
+            step={30}  
+            timeslots={2} 
             date={currentDate}
             onNavigate={(date) => setCurrentDate(date)}
         />
@@ -482,16 +500,20 @@ function CalendarView(props) {
 function CustomEvent({ event }) {
   const start = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const end = event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const showTime = start === end ? start : `${start} – ${end}`;
+
   const campus = event?.title?.match(/\((.*?)\)/)?.[1] || '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
-      <strong>{event.title.replace(/\s*–.*?\(.*?\)/, '').trim()}</strong>
-      <span>{start} – {end}</span>
+      <strong>{event.title.replace(/\s*\(.*?\)\s*/, '')}</strong>
+      <span>{showTime}</span>
       {campus && <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>{campus} Campus</span>}
     </div>
   );
 }
+
 
 
 export default CalendarView;

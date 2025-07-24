@@ -146,3 +146,10 @@ nav .signup:hover {
 .rbc-day-bg {
   overflow-y: auto;
 }
+
+.rbc-event {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
