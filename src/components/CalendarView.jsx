@@ -35,9 +35,8 @@ async function fetchJSON(pathSegments) {
   }
 }
 
-
+//normalize and clean text data 
 const normText = (v) => (v ?? '').trim().toLowerCase();
-
 const normNum = (v) => (v ?? '').trim();
 
 // map SFU "days" strings to JS weekday numbers
@@ -158,6 +157,7 @@ function CalendarView(props) {
   const [internalEvents, setInternalEvents] = useState([]);
   const events = propEvents !== undefined ? propEvents : internalEvents;
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState('month'); 
   const updateEvents =
     typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
 
@@ -467,13 +467,16 @@ function CalendarView(props) {
             selectable
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
-            defaultView="month"
+            view={view}
+            onView={setView}
             views={['month', 'week', 'day', 'agenda']}
+            /*
             popup
             showMultiDayTimes
             dayLayoutAlgorithm="no-overlap"
+            */
             date={currentDate}
-            onNavigate={(date) => setCurrentDate(date)}
+            onNavigate={setCurrentDate}
         />
       </div>
     </div>
