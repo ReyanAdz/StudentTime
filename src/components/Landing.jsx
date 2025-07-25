@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-function Home({ events, setEvents }) {
+function Landing({ events, setEvents }) {
   return (
     <>
       <header className="navbar">
@@ -29,10 +30,12 @@ function Home({ events, setEvents }) {
       </section>
 
       <section className="features">
-        <div className="feature">
-          <h2>✨ Clean Visual Planner</h2>
-          <p>Easily view your week with a simple and organized calendar. Add your own events or import course schedules directly from SFU.</p>
-        </div>
+        <Link to="/calendar" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card">
+            <h3>✨ Clean Visual Planner</h3>
+            <p>Easily view your week with a simple and organized calendar. Add your own events or import course schedules directly from SFU.</p>
+          </div>
+        </Link>
         <div className="feature">
           <h2>📊 Budget Tracker</h2>
           <p>Track your expenses and manage your student budget in one place. Stay on top of where your money goes.</p>
@@ -50,4 +53,4 @@ function Home({ events, setEvents }) {
   );
 }
 
-export default Home;
+export default Landing;
