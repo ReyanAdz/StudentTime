@@ -35,7 +35,7 @@ async function fetchJSON(pathSegments) {
   }
 }
 
-//normalize and clean text data 
+//clean text data 
 const normText = (v) => (v ?? '').trim().toLowerCase();
 const normNum = (v) => (v ?? '').trim();
 
@@ -122,7 +122,7 @@ function expandScheduleItem(item, titlePrefix, courseKey) {
   return events;
 }
 
-// parse full outline payload to calendar events
+// parse full outline to calendar events
 function outlineToEvents(data, courseKey) {
   const title = data?.info?.title || data?.title || 'Course';
   const sectionLabel = data?.info?.section || data?.section || '';
@@ -144,15 +144,13 @@ function outlineToEvents(data, courseKey) {
   return evs;
 }
 
-/* small util so we can capitalize "summer" -> "Summer" for UI */
+/* capitalize for the ui */
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
-/* ---------- component ---------- */
-
 function CalendarView(props) {
-  // accept parent state if provided; else fallback to internal state
+  // use parent value if given, otherwise use default
   const { events: propEvents, setEvents: propSetEvents } = props;
   const [internalEvents, setInternalEvents] = useState([]);
   const events = propEvents !== undefined ? propEvents : internalEvents;
@@ -161,7 +159,7 @@ function CalendarView(props) {
   const updateEvents =
     typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
 
-  // warn in dev if no setter passed
+  // warn if there is no update function
   useEffect(() => {
     if (typeof propSetEvents !== 'function') {
       console.warn(
@@ -173,8 +171,8 @@ function CalendarView(props) {
     }
   }, [propSetEvents]);
 
-  // Cascading select options
-  const [years, setYears] = useState(['2023', '2024', '2025']); // fallback
+  // select options
+  const [years, setYears] = useState(['2023', '2024', '2025']);
   const [terms, setTerms] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -188,7 +186,7 @@ function CalendarView(props) {
     section: '',
   });
 
-  /* ----- load years on mount ----- */
+  /* when the CalendarView loads get available academic years */
   useEffect(() => {
     (async () => {
       try {
@@ -203,7 +201,7 @@ function CalendarView(props) {
     })();
   }, []);
 
-  /* ----- when year changes, fetch terms ----- */
+  /* when year changes, get terms */
   useEffect(() => {
     if (!formData.year) {
       setTerms([]);
@@ -223,7 +221,7 @@ function CalendarView(props) {
     })();
   }, [formData.year]);
 
-  /* ----- when term changes, fetch departments ----- */
+  /* when term changes, get departments */
   useEffect(() => {
     if (!(formData.year && formData.term)) {
       setDepartments([]);
@@ -246,7 +244,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term]);
 
-  /* ----- when department changes, fetch courses ----- */
+  /* when department changes, get courses */
   useEffect(() => {
     if (!(formData.year && formData.term && formData.department)) {
       setCourses([]);
@@ -270,7 +268,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term, formData.department]);
 
-  /* ----- when course changes, fetch sections ----- */
+  /* when course changes, get sections */
   useEffect(() => {
     if (!(formData.year && formData.term && formData.department && formData.course)) {
       setSections([]);
@@ -295,7 +293,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term, formData.department, formData.course]);
 
-  /* ----- unified onChange for selects ----- */
+  /* handles changes for all the drop downs */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -308,7 +306,7 @@ function CalendarView(props) {
     }));
   };
 
-  /* ----- fetch + add selected course events ----- */
+  /* get selected courses from SFU and its schedule to calendar*/
   const fetchCourse = async () => {
     const { year, term, department, course, section } = formData;
     if (!year || !term || !department || !course || !section) {
@@ -343,44 +341,49 @@ function CalendarView(props) {
     }
   };
 
-  /* ----- manual click-to-add event ----- */
-  const handleSelectSlot = ({ start }) => {
-  const title = window.prompt("New Event Title:");
+  /* manually add event */
+const handleSelectSlot = ({ start }) => {
+  const title = window.prompt('New Event Title:');
   if (!title) return;
 
-  const timeStr = window.prompt("Start time? (HH:MM 24hr)", "23:59");
+  const timeStr = window.prompt('Start time? (HH:MM 24‑hr)', '23:59');
   if (!timeStr) return;
 
-  const [hour, minute] = timeStr.split(":").map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
   const startTime = new Date(start);
   startTime.setHours(hour, minute, 0);
 
-  const endTimeStr = window.prompt("End time? (optional, HH:MM 24hr — press Enter to skip):");
+  const endTimeStr = window.prompt(
+    'End time? (optional, HH:MM 24‑hr — press Enter to skip):'
+  );
 
   let endTime;
   if (endTimeStr) {
-    const [endHour, endMinute] = endTimeStr.split(":").map(Number);
+    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
     endTime = new Date(start);
     endTime.setHours(endHour, endMinute, 0);
   } else {
-    endTime = new Date(startTime); // use same as start if left blank
+    endTime = new Date(startTime.getTime() + 60_000);
   }
 
-  const newEvent = {
-  id: `${startTime.toISOString()}-${title}-${Math.random().toString(36).slice(2)}`,  // generate unique ID
-  title,
-  start: startTime,
-  end: endTime,
-  allDay: false,
+  updateEvents(prev => [
+    ...prev,
+    {
+      id: `${startTime.toISOString()}-${Math.random().toString(36).slice(2)}`,
+      title,
+      start: startTime,
+      end: endTime,
+      allDay: false,
+    },
+  ]);
 };
 
-  updateEvents(prev => [...prev, newEvent]);
-};
 
 
-  /* ----- click existing event -> delete options ----- */
+
+  /* delete events */
   const handleSelectEvent = (eventObj /*, e */) => {
-    // If this is a course meeting, offer "delete all" option.
+    // delete all option for course
     if (eventObj.eventType === 'course' && eventObj.courseKey) {
       const delAll = window.confirm(
         `Delete ALL meetings for:\n${eventObj.title}\n\nOK = delete all for this course\nCancel = delete just this one meeting`
@@ -390,7 +393,6 @@ function CalendarView(props) {
         return;
       }
     }
-    // else just confirm delete this one
     const delOne = window.confirm(
       `Delete "${eventObj.title}" on ${eventObj.start.toLocaleString()}?`
     );
@@ -499,22 +501,35 @@ function CalendarView(props) {
     </div>
   );
 }
-function CustomEvent({ event }) {
-  const start = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const end = event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function CustomEvent({ event, view }) {
+  const startStr = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endStr =
+    event.end &&
+    event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const showTime = start === end ? start : `${start} – ${end}`;
+  const isSameMinute = !endStr || Math.abs(event.end - event.start) <= 60_000;
+  const showTime = isSameMinute ? startStr : `${startStr} – ${endStr}`;
 
-  const campus = event?.title?.match(/\((.*?)\)/)?.[1] || '';
+  /* remove section numbers from calendar */
+  const cleanTitle = event.title.split('–')[0].trim();
+
+  const campus = event.title.match(/\((.*?)\)/)?.[1] || '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
-      <strong>{event.title.replace(/\s*\(.*?\)\s*/, '')}</strong>
+      <strong>{cleanTitle}</strong>
       <span>{showTime}</span>
-      {campus && <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>{campus} Campus</span>}
+      {campus && (
+        <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>
+          {campus}&nbsp;Campus
+        </span>
+      )}
     </div>
   );
 }
+
+
+
 
 
 
