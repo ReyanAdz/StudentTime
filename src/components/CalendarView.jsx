@@ -35,9 +35,8 @@ async function fetchJSON(pathSegments) {
   }
 }
 
-
+//normalize and clean text data 
 const normText = (v) => (v ?? '').trim().toLowerCase();
-
 const normNum = (v) => (v ?? '').trim();
 
 // map SFU "days" strings to JS weekday numbers
@@ -158,6 +157,7 @@ function CalendarView(props) {
   const [internalEvents, setInternalEvents] = useState([]);
   const events = propEvents !== undefined ? propEvents : internalEvents;
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState('month'); 
   const updateEvents =
     typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
 
@@ -344,22 +344,39 @@ function CalendarView(props) {
   };
 
   /* ----- manual click-to-add event ----- */
-  const handleSelectSlot = ({ start, end }) => {
-    const title = window.prompt('New Event Title');
-    if (title) {
-      updateEvents(prev => [
-        ...prev,
-        {
-          id: `manual-${start.getTime()}-${end.getTime()}`,
-          title,
-          start,
-          end,
-          allDay: false,
-          eventType: 'manual',
-        },
-      ]);
-    }
-  };
+  const handleSelectSlot = ({ start }) => {
+  const title = window.prompt("New Event Title:");
+  if (!title) return;
+
+  const timeStr = window.prompt("Start time? (HH:MM 24hr)", "23:59");
+  if (!timeStr) return;
+
+  const [hour, minute] = timeStr.split(":").map(Number);
+  const startTime = new Date(start);
+  startTime.setHours(hour, minute, 0);
+
+  const endTimeStr = window.prompt("End time? (optional, HH:MM 24hr — press Enter to skip):");
+
+  let endTime;
+  if (endTimeStr) {
+    const [endHour, endMinute] = endTimeStr.split(":").map(Number);
+    endTime = new Date(start);
+    endTime.setHours(endHour, endMinute, 0);
+  } else {
+    endTime = new Date(startTime); // use same as start if left blank
+  }
+
+  const newEvent = {
+  id: `${startTime.toISOString()}-${title}-${Math.random().toString(36).slice(2)}`,  // generate unique ID
+  title,
+  start: startTime,
+  end: endTime,
+  allDay: false,
+};
+
+  updateEvents(prev => [...prev, newEvent]);
+};
+
 
   /* ----- click existing event -> delete options ----- */
   const handleSelectEvent = (eventObj /*, e */) => {
@@ -467,13 +484,16 @@ function CalendarView(props) {
             selectable
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
-            defaultView="month"
+            view={view}
+            onView={setView}
             views={['month', 'week', 'day', 'agenda']}
+            /*
             popup
             showMultiDayTimes
             dayLayoutAlgorithm="no-overlap"
+            */
             date={currentDate}
-            onNavigate={(date) => setCurrentDate(date)}
+            onNavigate={setCurrentDate}
         />
       </div>
     </div>
@@ -482,16 +502,20 @@ function CalendarView(props) {
 function CustomEvent({ event }) {
   const start = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const end = event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const showTime = start === end ? start : `${start} – ${end}`;
+
   const campus = event?.title?.match(/\((.*?)\)/)?.[1] || '';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
-      <strong>{event.title.replace(/\s*–.*?\(.*?\)/, '').trim()}</strong>
-      <span>{start} – {end}</span>
+      <strong>{event.title.replace(/\s*\(.*?\)\s*/, '')}</strong>
+      <span>{showTime}</span>
       {campus && <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>{campus} Campus</span>}
     </div>
   );
 }
+
 
 
 export default CalendarView;

@@ -31,15 +31,15 @@ function Home({ events, setEvents }) {
       <section className="features">
         <div className="feature">
           <h2>✨ Clean Visual Planner</h2>
-          <p>Drag and drop your classes, tasks, and events into a beautiful weekly view.</p>
+          <p>Easily view your week with a simple and organized calendar. Add your own events or import course schedules directly from SFU.</p>
         </div>
         <div className="feature">
-          <h2>📅 Calendar Sync</h2>
-          <p>Connect with Google Calendar or iCal to see everything in one place.</p>
+          <h2>📊 Budget Tracker</h2>
+          <p>Track your expenses and manage your student budget in one place. Stay on top of where your money goes.</p>
         </div>
         <div className="feature">
-          <h2>💡 Smart Reminders</h2>
-          <p>Get notified before deadlines or when it's time to study.</p>
+          <h2>📌 Custom Events</h2>
+          <p>Add one-time or recurring tasks, study sessions, or personal events — tailored to your own routine.</p>
         </div>
       </section>
 
