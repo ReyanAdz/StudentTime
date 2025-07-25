@@ -1,29 +1,28 @@
-name: React CI Pipeline
+# .github/workflows/ci.yml
+
+name: Run Vitest
 
 on:
   push:
-    branches: [iteration2]
+    branches: [ main, iteration2 ] # adjust to your branches
   pull_request:
-    branches: [iteration2]
+    branches: [ main, iteration2 ]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20 # or whatever version you're using
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run tests
-      run: npm test --if-present
-
-    - name: Build app
-      run: npm run build
+      - name: Run Vitest
+        run: npm test
