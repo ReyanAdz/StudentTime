@@ -4,7 +4,7 @@ name: Run Vitest
 
 on:
   push:
-    branches: [ main, iteration2 ] # adjust to your branches
+    branches: [ main, iteration2 ]
   pull_request:
     branches: [ main, iteration2 ]
 
@@ -19,7 +19,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20 # or whatever version you're using
+          node-version: 20
+
+      - name: Clean node_modules and package-lock.json (Rollup fix)
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
 
       - name: Install dependencies
         run: npm install
