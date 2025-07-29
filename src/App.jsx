@@ -1,21 +1,21 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Landing from "./components/Landing";
-import Dashboard from "./components/Dashboard";
+// src/App.jsx
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Landing from './components/Landing';
+import SignUp from './components/SignUp';
+import Login from './components/Login';
+import CalendarView from './components/CalendarView';
+import Finance from './components/Finance';
 
 function App() {
-  const [events, setEvents] = useState([]);
-
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/calendar"
-          element={<Dashboard events={events} setEvents={setEvents} />}
-        />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/calendar" element={<CalendarView />} />
+      <Route path="/finance" element={<Finance />} />
+    </Routes>
   );
 }
 

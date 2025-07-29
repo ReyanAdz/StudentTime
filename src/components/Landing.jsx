@@ -11,8 +11,8 @@ function Landing({ events, setEvents }) {
         </div>
         <nav>
           <a href="#">About</a>
-          <a href="#" className="login">Log In</a>
-          <a href="#" className="signup">Sign Up</a>
+          <Link to="/login" className="login">Log In</Link>
+          <Link to="/signup" className="signup">Sign Up</Link>
         </nav>
       </header>
 
