@@ -29,11 +29,12 @@ const navStyle = {
 const logoContainer = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "1px",
 };
 
 const logoStyle = {
-  height: "36px",
+	width: '50px',    
+	height: '50px',
 };
 
 const titleStyle = {
