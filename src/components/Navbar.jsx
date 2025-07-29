@@ -10,7 +10,7 @@ function Navbar() {
       </div>
 
       <ul style={linkListStyle}>
-        <li><Link to="/home" style={linkStyle}>Home</Link></li>
+        <li><Link to="/calendar" style={linkStyle}>Calandar</Link></li>
         <li><Link to="/finance" style={linkStyle}>Finances</Link></li>
       </ul>
     </nav>
