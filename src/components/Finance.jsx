@@ -3,46 +3,37 @@ import React, { useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import GPTFinanceWidget from "./GPTFinanceAdvice";
-
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   Plus,
   Minus,
-  CreditCard,
-  Music,
-  Building,
   ChevronDown,
-  Search,
 } from "lucide-react";
 
-/* ---------- colour map (6 categories) ---------- */
+// 🔥 ADDED
+import { auth } from "../firebase/firebase-config";
+import { db } from "../firebase/firestore-config";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
+/* ---------- colour map ---------- */
 const COLOR_MAP = {
-  Entertainment: "#3B82F6",          // blue
-  Food:           "#10B981",          // green
-  Transport:      "#F59E0B",          // orange
-  Education:      "#8B5CF6",          // purple
-  "Health and Wellness": "#EC4899",   // pink
-  Other:          "#64748B",          // gray
+  Entertainment: "#3B82F6",
+  Food: "#10B981",
+  Transport: "#F59E0B",
+  Education: "#8B5CF6",
+  "Health and Wellness": "#EC4899",
+  Other: "#64748B",
 };
 
-/* ---------- component ---------- */
 export default function Finance() {
-  /* master transaction list – start empty */
   const [transactions, setTransactions] = useState([]);
-
-  /* collapsible “Last transactions” card */
   const [showTx, setShowTx] = useState(true);
-
-  /* form state */
   const [form, setForm] = useState({
     desc: "",
     amount: "",
     category: "Other",
   });
 
-  /* ---- helpers ---- */
-
-  /** push a new transaction; positive = income, negative = expense */
   const addTransaction = (asExpense = false) => {
     const amt = parseFloat(form.amount);
     if (!form.desc || Number.isNaN(amt)) return;
@@ -51,7 +42,7 @@ export default function Finance() {
       {
         id: prev.length + 1,
         description: form.desc,
-        method: "Manual", // could be extended later
+        method: "Manual",
         date: new Date().toISOString().split("T")[0],
         amount: asExpense ? -Math.abs(amt) : Math.abs(amt),
         category: form.category,
@@ -60,11 +51,9 @@ export default function Finance() {
       ...prev,
     ]);
 
-    /* reset inputs */
     setForm({ desc: "", amount: "", category: "Other" });
   };
 
-  /* totals */
   const incomeTotal = transactions
     .filter((t) => t.amount > 0)
     .reduce((sum, t) => sum + t.amount, 0);
@@ -75,7 +64,6 @@ export default function Finance() {
 
   const currentBal = incomeTotal - expenseTotal;
 
-  /* build chart data from expense rows */
   const expenseByCat = transactions
     .filter((t) => t.amount < 0)
     .reduce((acc, t) => {
@@ -90,14 +78,60 @@ export default function Finance() {
     color: COLOR_MAP[name] || COLOR_MAP.Other,
   }));
 
+  const saveTransactionsToFirestore = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Please log in to save your finances.");
+    return;
+  }
 
-  /* ---------- render ---------- */
+  try {
+    const userRef = doc(db, "users", user.uid);
+
+    // Strip out the icon field before saving
+    const cleanedTransactions = transactions.map(({ icon, ...rest }) => rest);
+
+    await setDoc(userRef, { financeData: { transactions: cleanedTransactions } }, { merge: true });
+
+    alert("Finance data saved!");
+  } catch (err) {
+    console.error("🔥 FIRESTORE SAVE ERROR:", err);
+    alert("Something went wrong while saving.");
+  }
+};
+
+
+  // 🔥 LOAD expenses from Firestore
+  const loadTransactionsFromFirestore = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please log in to load your finances.");
+      return;
+    }
+
+    try {
+    const user = auth.currentUser;
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    const data = userSnap.data();
+    if (data?.financeData?.transactions) {
+      setTransactions(data.financeData.transactions);
+      alert("Finance data loaded!");
+    } else {
+      alert("No saved data found.");
+    }
+    } catch (err) {
+    console.error("Failed to load:", err);
+    alert("Something went wrong while loading.");
+    }
+  };
+
   return (
     <>
       <Navbar />
 
       <div className="finance-wrapper">
-        {/* -------- balance box -------- */}
         <section className="balance-box">
           <h2>${currentBal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
           <p style={{ color: "#4b5563" }}>Current Balance</p>
@@ -117,7 +151,6 @@ export default function Finance() {
             </div>
           </div>
 
-          {/* ---- quick‑add form ---- */}
           <input
             value={form.desc}
             onChange={(e) => setForm({ ...form, desc: e.target.value })}
@@ -153,14 +186,21 @@ export default function Finance() {
           <button onClick={() => addTransaction(true)} className="btn btn-red">
             <Minus size={14} /> Expense
           </button>
+
+          {/* 🔥 Save/Load Buttons */}
+          <div style={{ marginTop: "1rem", display: "flex", gap: "0.75rem", justifyContent: "center" }}>
+            <button onClick={saveTransactionsToFirestore} className="btn btn-green">
+              💾 Save Finances
+            </button>
+            <button onClick={loadTransactionsFromFirestore} className="btn btn-blue">
+              📥 Load Finances
+            </button>
+          </div>
         </section>
 
-        {/* -------- grid: chart + transactions -------- */}
         <div className="card-grid">
-          {/* pie chart card */}
           <div className="card">
             <h3>Expenses by category</h3>
-
             {pieData.length ? (
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
@@ -180,9 +220,7 @@ export default function Finance() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p style={{ textAlign: "center", padding: "2rem 0" }}>
-                No expenses yet
-              </p>
+              <p style={{ textAlign: "center", padding: "2rem 0" }}>No expenses yet</p>
             )}
 
             {pieData.length > 0 && (
@@ -199,7 +237,6 @@ export default function Finance() {
             )}
           </div>
 
-          {/* transactions card */}
           <div className="card">
             <h3
               style={{ display: "flex", cursor: "pointer", userSelect: "none" }}
@@ -230,24 +267,15 @@ export default function Finance() {
                       <div className="txn-icon">{t.icon}</div>
                       <div className="txn-main">
                         <p style={{ fontSize: ".875rem" }}>{t.description}</p>
-                        <p style={{ fontSize: ".75rem", color: "#6b7280" }}>
-                          {t.category}
-                        </p>
+                        <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.category}</p>
                       </div>
                     </div>
-
                     <div style={{ textAlign: "right" }}>
-                      <p
-                        className={
-                          "txn-amt " + (t.amount > 0 ? "txn‑green" : "txn‑red")
-                        }
-                      >
+                      <p className={"txn-amt " + (t.amount > 0 ? "txn‑green" : "txn‑red")}>
                         {t.amount > 0 ? "+" : ""}
                         {t.amount.toFixed(2)}
                       </p>
-                      <p style={{ fontSize: ".75rem", color: "#6b7280" }}>
-                        {t.date}
-                      </p>
+                      <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.date}</p>
                     </div>
                   </div>
                 ))}
@@ -255,13 +283,16 @@ export default function Finance() {
             )}
           </div>
         </div>
-       <GPTFinanceWidget financeData={{
+
+        <GPTFinanceWidget
+          financeData={{
             currentBal,
             incomeTotal,
             expenseTotal,
             expenseByCat,
             transactions,
-          }} />
+          }}
+        />
       </div>
 
       <Footer />

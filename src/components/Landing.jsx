@@ -13,7 +13,6 @@ function Landing({ events, setEvents }) {
           <span>StudentTime</span>
         </div>
         <nav>
-          <a href="#">About</a>
           <Link to="/login" className="login">Log In</Link>
           <Link to="/signup" className="signup">Sign Up</Link>
         </nav>

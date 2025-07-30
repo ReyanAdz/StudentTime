@@ -42,7 +42,7 @@ function UserInfo() {
       borderRadius: '12px',
       boxShadow: '0 2px 5px rgb(0, 163, 204)',
       zIndex: 9999
-    }}>n
+    }}>
       <p>{auth.currentUser?.displayName || "Anonymous"}</p>
       <button onClick={handleLogout} style={{ marginTop: '5px' }}>Log Out</button>
     </div>
