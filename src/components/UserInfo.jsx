@@ -35,15 +35,15 @@ function UserInfo() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 10,
-      right: 10,
-      backgroundColor: '#f3f4f6',
+      bottom: 20,
+      left: 20,
+      backgroundColor: '#33d6ff',
       padding: '10px 15px',
-      borderRadius: '10px',
-      boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-      zIndex: 1000
-    }}>
-      <p style={{ margin: 0 }}>👤 {userEmail}</p>
+      borderRadius: '12px',
+      boxShadow: '0 2px 5px rgb(0, 163, 204)',
+      zIndex: 9999
+    }}>n
+      <p>{auth.currentUser?.displayName || "Anonymous"}</p>
       <button onClick={handleLogout} style={{ marginTop: '5px' }}>Log Out</button>
     </div>
   );

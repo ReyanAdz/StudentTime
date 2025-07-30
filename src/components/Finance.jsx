@@ -97,13 +97,6 @@ export default function Finance() {
       <Navbar />
 
       <div className="finance-wrapper">
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem" }}>
-          StudentTime · Finance
-        </h1>
-
-        {/* tiny search icon placeholder */}
-        <Search size={20} />
-
         {/* -------- balance box -------- */}
         <section className="balance-box">
           <h2>${currentBal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
