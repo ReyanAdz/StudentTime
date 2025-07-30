@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import UserInfo from './UserInfo';
 import Navbar from './Navbar';
+import "../styles/landing.css";
+
 
 
 function Landing({ events, setEvents }) {
@@ -30,7 +32,6 @@ function Landing({ events, setEvents }) {
 
         </div>
       </section>
-
       <section className="features">
       <div className="feature">
         <h2> Clean Visual Planner</h2>
