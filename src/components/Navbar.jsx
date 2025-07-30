@@ -32,7 +32,8 @@ const styles = {
     textDecoration: 'none',
   },
   logo: {
-    width: '30px',
+    width: '50px',
+    height: '50px',
     marginRight: '0.5rem',
   },
   title: {

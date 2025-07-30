@@ -141,7 +141,7 @@ Now: ${prompt.trim()}
           style={{ background:'#4f46e5', color:'white', border:'none',
                    borderRadius:4, padding:'8px 14px', cursor:'pointer' }}
         >
-          {loading ? '…' : 'Ask GPT'}
+          {loading ? '…' : 'Optimize My Time'}
         </button>
       </form>
 

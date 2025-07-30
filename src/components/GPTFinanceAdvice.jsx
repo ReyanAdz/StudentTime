@@ -116,7 +116,7 @@ USER QUESTION: ${q}
           className="btn btn-green"
           style={{ minWidth: 110 }}
         >
-          {loading ? "…thinking" : "Ask GPT"}
+          {loading ? "…thinking" : "Analyze My Spending"}
         </button>
       </form>
 

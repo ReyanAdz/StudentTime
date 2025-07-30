@@ -20,10 +20,9 @@ function Landing({ events, setEvents }) {
 
       <section className="hero">
         <div className="hero-content">
-          <h1>Your Schedule. Simplified.</h1>
+          <h1>Stay Organized. Stay on Budget.</h1>
           <p>
-            Plan smarter, stay organized, and own your time with our all-in-one scheduling
-            platform made for students.
+            All-in-one scheduling and budgeting made for student life—plan smarter, spend better, and take control of your time and money.
           </p>
           <div className="cta-buttons">
             <a href="#" className="btn primary">Get Started</a>
