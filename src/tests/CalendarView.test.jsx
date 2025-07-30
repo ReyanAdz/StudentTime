@@ -49,7 +49,7 @@ beforeEach(() => {
 describe('CalendarView', () => {
   test('renders CalendarView component', () => {
     render(<CalendarView />);
-    expect(screen.getByText(/Add SFU Course to Calendar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Create Your Schedule Here!/i)).toBeInTheDocument();
     expect(screen.getByTestId('calendar-mock')).toBeInTheDocument();
   });
 
