@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import GPTFinanceWidget from "./GPTFinanceAdvice";
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
@@ -88,6 +89,7 @@ export default function Finance() {
     value,
     color: COLOR_MAP[name] || COLOR_MAP.Other,
   }));
+
 
   /* ---------- render ---------- */
   return (
@@ -260,6 +262,13 @@ export default function Finance() {
             )}
           </div>
         </div>
+       <GPTFinanceWidget financeData={{
+            currentBal,
+            incomeTotal,
+            expenseTotal,
+            expenseByCat,
+            transactions,
+          }} />
       </div>
 
       <Footer />
