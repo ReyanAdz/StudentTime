@@ -400,18 +400,20 @@ nav .signup:hover {
   padding-top: 5rem;            /* adjust spacing to move it up */
   text-align: center;
 }
-.cta-buttons {
+.cta-buttons{
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: center;   /* ← centers the button(s) horizontally */
 }
+
 
 .btn.primary {
   background-color: #000;
   color: #fff;
-  font-size: 1.5rem;         /* increase font size */
+  font-size: 1rem;         /* increase font size */
   font-weight: 600;
-  padding: 1.5rem 2.5rem; /* bigger padding = bigger button */
+  padding: 0.75rem 1.25rem; /* bigger padding = bigger button */
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -420,4 +422,12 @@ nav .signup:hover {
 
 .btn.primary:hover {
   background-color: #222;
+}
+
+/* smaller dark variation for focus page */
+.btn.secondary {
+  background: #000;
+  color: #fff;
+  font-size: 1rem;
+  padding: 1rem 2rem;
 }

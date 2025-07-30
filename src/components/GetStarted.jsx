@@ -15,10 +15,10 @@ function GetStarted() {
       </p>
 
       <div className="cta-buttons">
-        <button className="btn primary" onClick={() => navigate('/calendar')}>
+        <button className="btn secondary" onClick={() => navigate('/calendar')}>
           📅 Use the Calendar
         </button>
-        <button className="btn primary" onClick={() => navigate('/finance')}>
+        <button className="btn secondary" onClick={() => navigate('/finance')}>
           💰 Manage Finances
         </button>
       </div>
