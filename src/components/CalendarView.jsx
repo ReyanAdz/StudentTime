@@ -493,7 +493,7 @@ const loadEvents = async () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2 style={{ marginBottom: '10px' }}>📘 Add SFU Course to Calendar</h2>
+      <h2 style={{ marginBottom: '10px' }}>Create Your Schedule Here!</h2>
 
       {/* Cascading selectors */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>

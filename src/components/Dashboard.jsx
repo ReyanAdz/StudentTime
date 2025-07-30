@@ -1,33 +1,40 @@
 import React from "react";
-import { auth } from "../firebase/firebase-config"; // 🔥 add this!
+import { auth } from "../firebase/firebase-config";
 import CalendarView from "./CalendarView";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 function Dashboard({ events, setEvents }) {
-  // 🧠 Get display name or fallback to "Student"
   const rawName = auth.currentUser?.displayName || "Student";
   const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
   return (
     <>
       <Navbar />
-      <div
-        className="dashboard-container"
-        style={{
-          padding: "2rem",
-          backgroundColor: "#f8f9fa",
-          minHeight: "100vh",
-        }}
-      >
-        {/* Greeting */}
-        <h1 style={{ fontSize: "2rem", marginBottom: "1.5rem" }}>
-          👋 Hello, {displayName}!
-        </h1>
+      <div className="calendar-page">
+        <div
+          className="dashboard-container"
+          style={{
+            padding: "2rem",
+            backgroundColor: "#F4F6F7", // Slightly darker background
+            minHeight: "100vh",
+          }}
+        >
+          {/* Greeting */}
+          <h1
+            style={{
+              fontSize: "2rem",
+              marginBottom: "1.5rem",
+              textAlign: "center", // Center the greeting
+            }}
+          >
+            Welcome, {displayName}!
+          </h1>
 
-        {/* Calendar */}
-        <div style={{ marginBottom: "2rem" }}>
-          <CalendarView events={events} setEvents={setEvents} />
+          {/* Calendar */}
+          <div style={{ marginBottom: "2rem" }}>
+            <CalendarView events={events} setEvents={setEvents} />
+          </div>
         </div>
       </div>
       <Footer />
@@ -35,7 +42,7 @@ function Dashboard({ events, setEvents }) {
   );
 }
 
-// quick inline card style
+// Optional reusable card styles
 const cardStyle = {
   backgroundColor: "white",
   padding: "1.25rem",
