@@ -7,6 +7,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Finance from './components/Finance';
 import UserInfo from './components/UserInfo';
+import GetStarted from './components/GetStarted';
 
 function App() {
   const location = useLocation();
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/calendar" element={<Dashboard />} />
         <Route path="/finance" element={<Finance />} />
+        <Route path="/start" element={<GetStarted />} />
       </Routes>
     </>
   );

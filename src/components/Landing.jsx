@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import UserInfo from './UserInfo';
 import Navbar from './Navbar';
 
+
 function Landing({ events, setEvents }) {
   return (
     <>
@@ -25,8 +26,9 @@ function Landing({ events, setEvents }) {
             All-in-one scheduling and budgeting made for student life—plan smarter, spend better, and take control of your time and money.
           </p>
           <div className="cta-buttons">
-            <a href="#" className="btn primary">Get Started</a>
+            <Link to="/start" className="btn primary">Get Started</Link>
           </div>
+
         </div>
       </section>
 
