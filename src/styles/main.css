@@ -11,7 +11,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background-color: #dddcdc;
+  background-color: #f9f9f9;
   box-shadow: 0 2px 8px rgba(40, 76, 88, 0.05);
   position: sticky;
   top: 0;
@@ -297,13 +297,20 @@ nav .signup:hover {
 .txn-red  { color:#dc2626; }
 
 /* Authentication Pages*/
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: #e5e7eb !important;
+}
+
 .auth-page {
   max-width: 400px;
   margin: 100px auto;
   padding: 2rem;
   border: 1px solid #ddd;
   border-radius: 10px;
-  background: #fff;
+  background: #8f6464;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   text-align: center;
 }
@@ -319,7 +326,7 @@ nav .signup:hover {
 .auth-page button {
   padding: 10px 20px;
   background: #4285f4;
-  color: white;
+  color: rgb(255, 251, 251);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -336,11 +343,12 @@ nav .signup:hover {
   align-items: center;
   height: 100vh;
   width: 100%;
-  background: linear-gradient(to right, #e0eafc, #cfdef3);
+    
+  background: #b2b6be;
 }
 
 .auth-card {
-  background: white;
+  background: #e5e7eb;
   padding: 3rem;
   border-radius: 12px;
   width: 90vw;           /* almost full width */
