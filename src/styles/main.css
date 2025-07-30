@@ -402,16 +402,18 @@ html, body {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  background-color: #ffffff;
+  background-color: #d1d1d1 !important; /* softer, subtle light gray */
   padding: 0.75rem 1.25rem;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   font-size: 0.95rem;
   display: flex;
   align-items: center;
   gap: 10px;
   z-index: 1000;
+  color: #111; /* dark text for legibility */
 }
+
 
 .hero-full {
   min-height: calc(100vh - 120px); /* leaves space for navbar */
@@ -448,8 +450,48 @@ html, body {
 
 /* smaller dark variation for focus page */
 .btn.secondary {
-  background: #000;
+  background: #333; /* lighter than pure black */
   color: #fff;
   font-size: 1rem;
   padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.btn.secondary:hover {
+  background: #474545;
+}
+
+
+
+.get-started-page {
+  background-color: #d1d1d1 !important;  /* lighter grey */
+  min-height: 100vh;
+}
+
+.get-started-page .navbar {
+  background-color: #b0b0b0 !important; /* darker than #d9d9d9 */
+  color: #1a1a1a !important;
+}
+
+.get-started-page .navbar a {
+  color: #111 !important;
+  font-weight: 500;
+}
+
+
+.get-started-hero {
+  min-height: calc(100vh - 120px); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 5rem;
+  text-align: center;
+  background-color: transparent;
+}
+
+.get-started-page .navbar a:hover {
+  color: #ffebc6;  /* warm soft yellow for subtle highlight */
 }
