@@ -1,9 +1,11 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  plugins: [react()],
   test: {
-    globals: true,         // <- this injects `expect`, `describe`, `test` globally
-    environment: 'jsdom',  // <- required for React + DOM testing
-    setupFiles: './src/tests/setup.js' // <- your global setup (like jest-dom)
+    environment: 'jsdom', // Enables DOM in Vitest
+    globals: true,         // Allows global test(), expect(), etc.
+    setupFiles: './src/tests/setup.js' // Enables jest-dom matchers
   }
-});
+})

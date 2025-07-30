@@ -3,7 +3,17 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CalendarView from '../components/CalendarView';
-import { vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+
+
+
+vi.mock('../firebase/firestore-config', () => ({
+  db: {}
+}));
+
+vi.mock('../firebase/firebase-config', () => ({
+  auth: { currentUser: { uid: 'test-user' } }
+}));
 
 // Mock react-big-calendar
 vi.mock('react-big-calendar', async () => {

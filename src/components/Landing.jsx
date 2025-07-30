@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import UserInfo from './UserInfo';
 
 function Landing({ events, setEvents }) {
   return (
@@ -9,7 +10,7 @@ function Landing({ events, setEvents }) {
           <img src="/src/assets/logo.png" alt="StudentTime Logo" className="logo-img" />
           <span>StudentTime</span>
         </div>
-        <nav>
+        <nav>3
           <a href="#">About</a>
           <Link to="/login" className="login">Log In</Link>
           <Link to="/signup" className="signup">Sign Up</Link>

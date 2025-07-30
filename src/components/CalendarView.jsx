@@ -6,7 +6,9 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import GPTPlannerWidget from './GPTPlannerWidget';
+import { auth } from '../firebase/firebase-config';
+import { db } from '../firebase/firestore-config';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({
@@ -144,6 +146,13 @@ function outlineToEvents(data, courseKey) {
   return evs;
 }
 
+function toDate(input) {
+  if (input instanceof Date) return input;
+  if (input?.seconds) return new Date(input.seconds * 1000); // Firestore Timestamp
+  if (typeof input === "string" || typeof input === "number") return new Date(input); // ISO or raw
+  return null; // fallback
+}
+
 /* capitalize for the ui */
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -158,6 +167,34 @@ function CalendarView(props) {
   const [view, setView] = useState('month'); 
   const updateEvents =
     typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
+
+   useEffect(() => {
+  const loadEvents = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (Array.isArray(data.calendarEvents)) {
+          const parsedEvents = data.calendarEvents.map(event => ({
+            ...event,
+            start: new Date(event.start?.seconds ? event.start.seconds * 1000 : event.start),
+            end: new Date(event.end?.seconds ? event.end.seconds * 1000 : event.end),
+          }));
+          updateEvents(parsedEvents);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading saved events:", err);
+    }
+  };
+
+  loadEvents();
+}, []);
+
 
   // warn if there is no update function
   useEffect(() => {
@@ -402,6 +439,53 @@ const handleSelectSlot = ({ start }) => {
   };
 
   const calEvents = useMemo(() => events, [events]);
+  const saveEvents = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to save events.");
+    return;
+  }
+
+  try {
+    const userDoc = doc(db, "users", user.uid);
+    await setDoc(userDoc, { calendarEvents: events }, { merge: true });
+    alert("Events saved successfully.");
+  } catch (err) {
+    console.error("Error saving events:", err);
+    alert("Failed to save events.");
+  }
+};
+const loadEvents = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to load events.");
+    return;
+  }
+
+  try {
+    const userDocRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (Array.isArray(data.calendarEvents)) {
+        const parsedEvents = data.calendarEvents.map(ev => ({
+          ...ev,
+          start: toDate(ev.start),
+          end: toDate(ev.end),
+        }));
+        updateEvents(parsedEvents); // ✅ Use parsed version
+        alert("Events loaded successfully.");
+      } else {
+        alert("No calendar events found.");
+      }
+    } else {
+      alert("User document does not exist.");
+    }
+  } catch (err) {
+    console.error("Error loading events:", err);
+    alert("Failed to load events.");
+  }
+};
 
   return (
     <div style={{ padding: '20px' }}>
@@ -469,9 +553,12 @@ const handleSelectSlot = ({ start }) => {
           ))}
         </select>
 
-        <button onClick={fetchCourse} disabled={!formData.section}>
-          Add Course
-        </button>
+       <div style={{ display: 'flex', gap: '10px' }}>
+        <button onClick={fetchCourse} disabled={!formData.section}>Add Course</button>
+        <button onClick={saveEvents}>Save Calendar</button>
+        <button onClick={loadEvents} style={{ marginLeft: '10px' }}>Load Saved Events</button>
+       </div>
+
       </div>
 
       {/* Calendar */}
@@ -498,13 +585,7 @@ const handleSelectSlot = ({ start }) => {
             onNavigate={setCurrentDate}
         />
       </div>
-
-      <div>
-         <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
-      </div>
-
     </div>
-
   );
 }
 function CustomEvent({ event, view }) {
@@ -533,9 +614,6 @@ function CustomEvent({ event, view }) {
     </div>
   );
 }
-
-
-
 
 
 
