@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import UserInfo from './UserInfo';
+import Navbar from './Navbar';
 
 function Landing({ events, setEvents }) {
   return (
@@ -10,7 +11,7 @@ function Landing({ events, setEvents }) {
           <img src="/src/assets/logo.png" alt="StudentTime Logo" className="logo-img" />
           <span>StudentTime</span>
         </div>
-        <nav>3
+        <nav>
           <a href="#">About</a>
           <Link to="/login" className="login">Log In</Link>
           <Link to="/signup" className="signup">Sign Up</Link>
@@ -31,22 +32,25 @@ function Landing({ events, setEvents }) {
       </section>
 
       <section className="features">
-        <Link to="/calendar" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="card">
-            <h3>✨ Clean Visual Planner</h3>
-            <p>Easily view your week with a simple and organized calendar. Add your own events or import course schedules directly from SFU.</p>
-          </div>
-        </Link>
-        <div className="feature">
-          <h2>📊 Budget Tracker</h2>
-          <p>Track your expenses and manage your student budget in one place. Stay on top of where your money goes.</p>
-        </div>
-        <div className="feature">
-          <h2>📌 Custom Events</h2>
-          <p>Add one-time or recurring tasks, study sessions, or personal events — tailored to your own routine.</p>
-        </div>
-      </section>
-
+      <div className="feature">
+        <h2> Clean Visual Planner</h2>
+        <p>
+          Easily view your week with a simple and organized calendar. Add your own events or import course schedules directly from SFU.
+        </p>
+      </div>
+      <div className="feature">
+        <h2>Custom Events</h2>
+        <p>
+          Add one-time or recurring tasks, study sessions, or personal events — tailored to your own routine.
+        </p>
+      </div>
+      <div className="feature">
+        <h2> Budget Tracker</h2>
+        <p>
+          Track your expenses and manage your student budget in one place. Stay on top of where your money goes.
+        </p>
+      </div>
+    </section>
       <footer className="footer">
         <p>&copy; 2025 StudentTime. All rights reserved.</p>
       </footer>

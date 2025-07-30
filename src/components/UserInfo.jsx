@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 function UserInfo() {
   const [userEmail, setUserEmail] = useState(null);
+  const [loading, setLoading] = useState(true); // track if auth is still loading
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -12,6 +13,7 @@ function UserInfo() {
       } else {
         setUserEmail(null);
       }
+      setLoading(false); // done loading after this fires
     });
 
     return () => unsubscribe();
@@ -27,10 +29,13 @@ function UserInfo() {
     }
   };
 
+  // 🔒 Don't show anything if we're loading or not logged in
+  if (loading || !userEmail) return null;
+
   return (
     <div style={{
-      position: 'absolute',
-      top: 10,
+      position: 'fixed',
+      bottom: 10,
       right: 10,
       backgroundColor: '#f3f4f6',
       padding: '10px 15px',
@@ -38,14 +43,8 @@ function UserInfo() {
       boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
       zIndex: 1000
     }}>
-      {userEmail ? (
-        <>
-          <p style={{ margin: 0 }}>👤 {userEmail}</p>
-          <button onClick={handleLogout} style={{ marginTop: '5px' }}>Log Out</button>
-        </>
-      ) : (
-        <p style={{ margin: 0 }}>Not logged in</p>
-      )}
+      <p style={{ margin: 0 }}>👤 {userEmail}</p>
+      <button onClick={handleLogout} style={{ marginTop: '5px' }}>Log Out</button>
     </div>
   );
 }

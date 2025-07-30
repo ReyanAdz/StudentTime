@@ -6,7 +6,7 @@ import Footer from "./Footer";
 function Dashboard({ events, setEvents }) {
   return (
     <>
-    <Navbar/ >
+    <Navbar />
     <div className="dashboard-container" style={{ padding: "2rem", backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
       {/* Greeting */}
       <h1 style={{ fontSize: "2rem", marginBottom: "1.5rem" }}>

@@ -8,7 +8,9 @@ import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { auth } from '../firebase/firebase-config';
 import { db } from '../firebase/firestore-config';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore'
+import GPTPlannerWidget from './GPTPlannerWidget'; // or '../components/GPTPlannerWidget' depending on the file structure
+
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({
@@ -487,6 +489,8 @@ const loadEvents = async () => {
   }
 };
 
+
+
   return (
     <div style={{ padding: '20px' }}>
       <h2 style={{ marginBottom: '10px' }}>📘 Add SFU Course to Calendar</h2>
@@ -585,7 +589,13 @@ const loadEvents = async () => {
             onNavigate={setCurrentDate}
         />
       </div>
+
+      <div>
+         <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
+      </div>
+
     </div>
+
   );
 }
 function CustomEvent({ event, view }) {
