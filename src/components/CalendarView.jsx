@@ -494,7 +494,7 @@ const loadEvents = async () => {
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <h2 className="calendar-title">Create Your Schedule</h2>
+        <h2 className="calendar-title">Create Your Schedule Here!</h2>
         <p className="calendar-subtitle">Import SFU courses or add custom events to organize your time</p>
       </div>
 
