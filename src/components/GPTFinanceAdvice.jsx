@@ -100,7 +100,7 @@ USER QUESTION: ${q}
   /* ── UI ─────────────────────────────────────────────────── */
   return (
     <section style={{ marginTop: "2rem" }}>
-      <h3 style={{ fontWeight: 600, marginBottom: ".5rem" }}>Ask GPT 💸</h3>
+      {/*<h3 style={{ fontWeight: 600, marginBottom: ".5rem" }}>Ask GPT 💸</h3>*/}
 
       <form onSubmit={handleAsk} style={{ display: "flex", gap: 8 }}>
         <input
