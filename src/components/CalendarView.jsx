@@ -492,112 +492,156 @@ const loadEvents = async () => {
 
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2 style={{ marginBottom: '10px' }}>Create Your Schedule Here!</h2>
-
-      {/* Cascading selectors */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-        {/* Year */}
-        <select name="year" value={formData.year} onChange={handleChange}>
-          <option value="">Year</option>
-          {years.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-
-        {/* Term */}
-        <select
-          name="term"
-          value={formData.term}
-          onChange={handleChange}
-          disabled={!formData.year}
-        >
-          <option value="">Term</option>
-          {terms.map(t => (
-            <option key={t} value={t}>{capitalize(t)}</option>
-          ))}
-        </select>
-
-        {/* Department */}
-        <select
-          name="department"
-          value={formData.department}
-          onChange={handleChange}
-          disabled={!formData.term}
-        >
-          <option value="">Dept</option>
-          {departments.map(d => (
-            <option key={d} value={d}>{d.toUpperCase()}</option>
-          ))}
-        </select>
-
-        {/* Course number */}
-        <select
-          name="course"
-          value={formData.course}
-          onChange={handleChange}
-          disabled={!formData.department}
-        >
-          <option value="">Course #</option>
-          {courses.map(c => (
-            <option key={c} value={c}>{c.toUpperCase()}</option>
-          ))}
-        </select>
-
-        {/* Section */}
-        <select
-          name="section"
-          value={formData.section}
-          onChange={handleChange}
-          disabled={!formData.course}
-        >
-          <option value="">Section</option>
-          {sections.map(s => (
-            <option key={s} value={s}>{s.toUpperCase()}</option>
-          ))}
-        </select>
-
-       <div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={fetchCourse} disabled={!formData.section}>Add Course</button>
-        <button onClick={saveEvents}>Save Calendar</button>
-        <button onClick={loadEvents} style={{ marginLeft: '10px' }}>Load Saved Events</button>
-       </div>
-
-      </div>
-
-      {/* Calendar */}
-      <div style={{ height: '80vh' }}>
-        <Calendar
-            localizer={localizer}
-            events={calEvents}
-            components={{ event: CustomEvent }}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ backgroundColor: 'white' }}
-            selectable
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-            view={view}
-            onView={setView}
-            views={['month', 'week', 'day', 'agenda']}
-            /*
-            popup
-            showMultiDayTimes
-            dayLayoutAlgorithm="no-overlap"
-            */
-            date={currentDate}
-            onNavigate={setCurrentDate}
-        />
-      </div>
-
-      <div>
-         <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
+    <div className="calendar-container">
+      <div className="calendar-header">
+        <h2 className="calendar-title">Create Your Schedule</h2>
+        <p className="calendar-subtitle">Import SFU courses or add custom events to organize your time</p>
       </div>
 
-    </div>
+      {/* Course Import Section */}
+      <div className="course-import-section">
+        <h3 className="section-title">Import SFU Courses</h3>
+        <div className="course-selectors">
+          {/* Year */}
+          <div className="selector-group">
+            <label className="selector-label">Year</label>
+            <select 
+              name="year" 
+              value={formData.year} 
+              onChange={handleChange}
+              className="selector-input"
+            >
+              <option value="">Select Year</option>
+              {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
 
-  );
+          {/* Term */}
+          <div className="selector-group">
+            <label className="selector-label">Term</label>
+            <select
+              name="term"
+              value={formData.term}
+              onChange={handleChange}
+              disabled={!formData.year}
+              className="selector-input"
+            >
+              <option value="">Select Term</option>
+              {terms.map(t => (
+                <option key={t} value={t}>{capitalize(t)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Department */}
+          <div className="selector-group">
+            <label className="selector-label">Department</label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              disabled={!formData.term}
+              className="selector-input"
+            >
+              <option value="">Select Department</option>
+              {departments.map(d => (
+                <option key={d} value={d}>{d.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Course number */}
+          <div className="selector-group">
+            <label className="selector-label">Course</label>
+            <select
+              name="course"
+              value={formData.course}
+              onChange={handleChange}
+              disabled={!formData.department}
+              className="selector-input"
+            >
+              <option value="">Select Course</option>
+              {courses.map(c => (
+                <option key={c} value={c}>{c.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Section */}
+          <div className="selector-group">
+            <label className="selector-label">Section</label>
+            <select
+              name="section"
+              value={formData.section}
+              onChange={handleChange}
+              disabled={!formData.course}
+              className="selector-input"
+            >
+              <option value="">Select Section</option>
+              {sections.map(s => (
+                <option key={s} value={s}>{s.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="course-actions">
+          <button 
+            onClick={fetchCourse} 
+            disabled={!formData.section}
+            className="btn btn-primary"
+          >
+            Add Course to Calendar
+          </button>
+        </div>
+      </div>
+
+      {/* Calendar Actions */}
+      <div className="calendar-actions">
+        <div className="action-buttons">
+          <button onClick={saveEvents} className="btn btn-secondary">
+            💾 Save Calendar
+          </button>
+          <button onClick={loadEvents} className="btn btn-secondary">
+            📂 Load Saved Events
+          </button>
+        </div>
+        <div className="calendar-info">
+          <p>💡 Click on any date to add a custom event</p>
+          <p>💡 Click on events to delete them</p>
+        </div>
+      </div>
+
+      {/* Calendar */}
+      <div className="calendar-wrapper">
+        <Calendar
+          localizer={localizer}
+          events={calEvents}
+          components={{ event: CustomEvent }}
+          startAccessor="start"
+          endAccessor="end"
+          selectable
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          view={view}
+          onView={setView}
+          views={['month', 'week', 'day', 'agenda']}
+          date={currentDate}
+          onNavigate={setCurrentDate}
+          className="main-calendar"
+        />
+      </div>
+
+      {/* GPT Planner Widget */}
+      <div className="gpt-widget-section">
+        <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
+      </div>
+    </div>
+  );
 }
+
 function CustomEvent({ event, view }) {
   const startStr = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const endStr =
@@ -609,22 +653,19 @@ function CustomEvent({ event, view }) {
 
   /* remove section numbers from calendar */
   const cleanTitle = event.title.split('–')[0].trim();
-
   const campus = event.title.match(/\((.*?)\)/)?.[1] || '';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
-      <strong>{cleanTitle}</strong>
-      <span>{showTime}</span>
+    <div className="custom-event">
+      <div className="event-title">{cleanTitle}</div>
+      <div className="event-time">{showTime}</div>
       {campus && (
-        <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>
-          {campus}&nbsp;Campus
-        </span>
+        <div className="event-campus">
+          {campus} Campus
+        </div>
       )}
     </div>
   );
 }
-
-
 
 export default CalendarView;
