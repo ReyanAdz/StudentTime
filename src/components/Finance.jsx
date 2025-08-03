@@ -13,6 +13,26 @@ import { useSubscriptions } from "./useSubscriptions.jsx";
 import SubscriptionsList from "./SubscriptionsList";
 import SubscriptionForm from "./SubscriptionForm";
 
+import entertainmentIcon from "../assets/entertainment.png";
+import transportIcon from "../assets/transportation.png";
+import educationIcon from "../assets/education.jpeg";
+import foodIcon from "../assets/food.png";
+import incomeIcon from "../assets/moneysign.png";
+import reoccuringpaymentIcon from "../assets/reoccuringpayment.png";
+import healthIcon from "../assets/health.png";
+import otherIcon from "../assets/other.png";
+
+const ICON_MAP = {
+  Entertainment: entertainmentIcon,
+  Transport: transportIcon,
+  Education: educationIcon,
+  Food: foodIcon,
+  Income: incomeIcon,
+  "Health and Wellness": healthIcon,
+  ReoccuringPayment: reoccuringpaymentIcon,
+  Other: otherIcon
+};
+
 /* ---------- colour map ---------- */
 const COLOR_MAP = {
   Entertainment: "#3B82F6",
@@ -30,6 +50,8 @@ export default function Finance() {
   const [showTx, setShowTx] = useState(true);
   const [form, setForm] = useState({ desc: "", amount: "", category: "Other" });
   const [triedAdd, setTriedAdd] = useState(false);
+  const [showAddSub, setShowAddSub] = useState(false);
+
 
   /* subscriptions */
   const uid = auth.currentUser?.uid;
@@ -55,7 +77,7 @@ export default function Finance() {
         method: "Manual",
         date: new Date().toISOString().split("T")[0],
         amount: asExpense ? -Math.abs(amt) : Math.abs(amt),
-        category: form.category,
+        category: asExpense ? form.category : "Income",
         icon: asExpense ? <Minus size={16} /> : <Plus size={16} />,
       },
       ...prev,
@@ -221,11 +243,27 @@ export default function Finance() {
           </div>
         </section>
 
-        {/* recurring payments */}
-        <div style={{ marginTop: "2rem" }}>
-          <SubscriptionForm uid={uid} addSub={addSub} rollForward={rollForward} />
-          <SubscriptionsList subs={subs} removeSub={removeSub} />
+        {/* Recurring Payments Section */}
+      <div className="card mt-8">
+        <h3 className="text-lg font-semibold mb-4">Recurring Payments</h3>
+        <SubscriptionsList subs={subs} removeSub={removeSub} />
+        <div className="mt-4">
+          {showAddSub ? (
+            <SubscriptionForm
+              uid={uid}
+              addSub={addSub}
+              rollForward={rollForward}
+              onClose={() => setShowAddSub(false)}
+            />
+          ) : (
+            <button onClick={() => setShowAddSub(true)} className="btn btn-green">
+              + Add Subscription
+            </button>
+          )}
         </div>
+      </div>
+
+
 
         {/* analytics & transactions */}
         <div className="card-grid">
@@ -284,7 +322,14 @@ export default function Finance() {
                   transactions.map((t, idx) => (
                     <div key={t.id ?? idx} className="txn" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ display: "flex", gap: 12 }}>
-                        <div className="txn-icon">{t.icon}</div>
+                        <div className="txn-icon">
+                          <img
+                            src={ICON_MAP[t.category] || otherIcon}
+                            alt={t.category}
+                            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                        </div>
+
                         <div className="txn-main">
                           <p style={{ fontSize: ".875rem" }}>{t.description}</p>
                           <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.category}</p>
