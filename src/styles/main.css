@@ -1132,3 +1132,24 @@ nav a.signup:hover {
   100% { transform: rotate(360deg); }
 }
 
+
+/* GPT output block ---------------------------------------- */
+.gpt-output{
+  white-space: pre-wrap;          /* keep line-breaks */
+  font-size: 0.925rem;            /* a bit smaller */
+  line-height: 1.45;
+  background: #f8fafc;            /* subtle light bg */
+  border: 1px solid #e2e8f0;      /* light border */
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;               /* allow tables to scroll */
+}
+
+/* optional: colour + / – dollar amounts */
+.gpt-output + span,
+.gpt-output  {
+  color: inherit;
+}
+.gpt-output  .pos { color:#16a34a; }   /* green */
+.gpt-output  .neg { color:#dc2626; }   /* red  */
+

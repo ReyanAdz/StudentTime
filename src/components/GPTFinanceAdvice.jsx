@@ -121,12 +121,9 @@ USER QUESTION: ${q}
       </form>
 
       {answer && (
-        <pre
-          className="mt-3 whitespace-pre-wrap bg-yellow-100 p-3 rounded text-sm"
-          style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}
-        >
-          {answer}
-        </pre>
+          <div className="gpt-output">
+            {answer}
+          </div>
       )}
     </section>
   );

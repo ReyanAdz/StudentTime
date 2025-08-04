@@ -148,12 +148,9 @@ Now: ${prompt.trim()}
       {/* output */}
       {response && (
         <>
-          <pre
-            style={{ marginTop:12, whiteSpace:'pre-wrap',
-                     background:'#f3f4f6', padding:12, borderRadius:4, fontSize:'0.9rem' }}
-          >
+          <div className="gpt-output">
             {response.replace(/```json[\s\S]*?```/i, '').trim()}
-          </pre>
+          </div>
 
           {addEvents && (
             <button
