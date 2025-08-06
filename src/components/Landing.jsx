@@ -8,10 +8,12 @@ import Navbar from './Navbar';
 function Landing({ events, setEvents }) {
   return (
     <>
+      <div className="features-background">
       <header className="navbar">
         <div className="logo">
           <img src="/src/assets/logo.png" alt="StudentTime Logo" className="logo-img" />
-          <span>StudentTime</span>
+          {/* Make StudentTime clickable and add class */}
+          <Link to="/" className="navbar-title">StudentTime</Link>
         </div>
         <nav>
           <Link to="/login" className="login">Log In</Link>
@@ -54,7 +56,9 @@ function Landing({ events, setEvents }) {
       <footer className="footer">
         <p>&copy; 2025 StudentTime. All rights reserved.</p>
       </footer>
+      </div>
     </>
+    
   );
 }
 
