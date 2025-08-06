@@ -11,7 +11,7 @@ function Landing({ events, setEvents }) {
       <div className="features-background">
       <header className="navbar">
         <div className="logo">
-          <img src="/src/assets/logo.png" alt="StudentTime Logo" className="logo-img" />
+          <img src="/logo.png" alt="StudentTime Logo" className="logo-img" />
           {/* Make StudentTime clickable and add class */}
           <Link to="/" className="navbar-title">StudentTime</Link>
         </div>
