@@ -746,17 +746,40 @@ nav a.signup:hover {
   bottom: var(--spacing-5);
   left: var(--spacing-5);
   background: var(--white);
-  padding: var(--spacing-3) var(--spacing-5);
+  padding: var(--spacing-4) var(--spacing-6);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   font-size: var(--font-size-sm);
   display: flex;
-  align-items: center;
+  flex-direction: column; /* stack vertically */
+  align-items: center;    /* center horizontally */
   gap: var(--spacing-3);
   z-index: 1000;
   color: var(--gray-700);
   border: 1px solid var(--gray-200);
   backdrop-filter: blur(10px);
+  min-width: 120px; /* optional: keeps a nice width */
+}
+
+.user-info-box p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.user-info-box button {
+  background: var(--danger);
+  color: var(--white);
+  border: none;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.user-info-box button:hover {
+  background: var(--danger);
+  opacity: 0.85;
 }
 
 /* Dashboard Styles */
