@@ -109,13 +109,22 @@ p {
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-6) var(--spacing-8);
-  background-color: var(--white);
+  background-color: var(--gray-800);
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--gray-200);
 }
+
+.navbar-title {
+  color: var(--white);
+  font-weight: 600;
+  font-size: var(--font-size-2xl);
+  text-decoration: none;
+  transition: transform 0.2s ease, color 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 
 .logo {
   display: flex;
@@ -147,7 +156,7 @@ nav {
 
 nav a {
   text-decoration: none;
-  color: var(--gray-600);
+  color: var(--white);
   font-weight: 500;
   transition: color var(--transition-fast);
   position: relative;
@@ -158,7 +167,7 @@ nav a:hover {
 }
 
 nav a.login {
-  color: var(--gray-600);
+  color: var(--white);
 }
 
 nav a.signup {
@@ -179,7 +188,7 @@ nav a.signup:hover {
 .hero {
   padding: var(--spacing-20) var(--spacing-8);
   text-align: center;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: #616e96;
   color: var(--white);
   position: relative;
   overflow: hidden;
@@ -192,7 +201,7 @@ nav a.signup:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  background: #616e96;
   opacity: 0.3;
 }
 
@@ -292,6 +301,11 @@ nav a.signup:hover {
   overflow: hidden;
 }
 
+.features-background {
+  width: 100%;
+  background: var(--white);
+}
+
 .feature::before {
   content: '';
   position: absolute;
@@ -322,9 +336,24 @@ nav a.signup:hover {
 .footer {
   text-align: center;
   padding: var(--spacing-8);
-  background: var(--gray-900);
-  color: var(--gray-400);
+  background: var(--gray-800);
+  color: var(--white);
   font-size: var(--font-size-sm);
+}
+
+.footer p {
+  color: white !important;
+  opacity: 1 !important;
+}
+
+.footer {
+  color: white !important;
+  opacity: 1 !important;
+}
+
+.footer * {
+  color: white !important;
+  opacity: 1 !important;
 }
 
 /* Calendar Styles */
@@ -659,25 +688,50 @@ nav a.signup:hover {
 /* Dashboard Styles */
 .dashboard-container {
   padding: var(--spacing-8);
-  background: var(--gray-50);
+  background-color: #616e96; /* <-- Solid background */
   min-height: 100vh;
+  color: var(--white); /* Ensure text is readable */
 }
+
+.dashboard-header {
+  background-color: #ffffff;
+  padding: var(--spacing-6);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--spacing-8);
+  text-align: center;
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-header h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: 700; /* Bold */
+  color: var(--gray-900); /* Solid Black */
+  text-shadow: none; /* Remove shadow if previously added */
+}
+
+
 
 .calendar-page .navbar,
 .finance-page .navbar {
-  background: var(--gray-900);
   color: var(--white);
+  font-weight: 600; 
 }
+
 
 .calendar-page .navbar a,
 .finance-page .navbar a {
-  color: var(--gray-300);
+  color: var(--white);
+  font-weight: 1000; 
 }
+
+
 
 .calendar-page .navbar a:hover,
 .finance-page .navbar a:hover {
   color: var(--white);
 }
+
 
 /* Get Started Page */
 .get-started-page {
@@ -822,8 +876,8 @@ nav a.signup:hover {
 .calendar-container {
   max-width: 1400px;
   margin: 0 auto;
+  background: #9fb7cd;
   padding: var(--spacing-8);
-  background: var(--white);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-lg);
   margin-top: var(--spacing-8);
@@ -831,8 +885,23 @@ nav a.signup:hover {
 }
 
 .calendar-header {
+  background-color: #ffffff;
+  padding: var(--spacing-10);
+  border-radius: var(--radius-2xl);
   text-align: center;
   margin-bottom: var(--spacing-8);
+  box-shadow: var(--shadow-md);
+}
+
+.calendar-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--white);
+}
+
+.calendar-subtitle {
+  font-size: var(--font-size-lg);
+  color: rgba(255,255,255,0.85);
 }
 
 .calendar-title {
@@ -1132,3 +1201,4 @@ nav a.signup:hover {
   100% { transform: rotate(360deg); }
 }
 
+/* Adding css for the subscription section*/ 

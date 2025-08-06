@@ -12,24 +12,11 @@ function Dashboard({ events, setEvents }) {
     <>
       <Navbar />
       <div className="calendar-page">
-        <div
-          className="dashboard-container"
-          style={{
-            padding: "2rem",
-            backgroundColor: "#F4F6F7", // Slightly darker background
-            minHeight: "100vh",
-          }}
-        >
-          {/* Greeting */}
-          <h1
-            style={{
-              fontSize: "2rem",
-              marginBottom: "1.5rem",
-              textAlign: "center", // Center the greeting
-            }}
-          >
-            Welcome, {displayName}!
-          </h1>
+        <div className="dashboard-container">
+          {/* Greeting Header Section */}
+          <div className="dashboard-header">
+            <h1>Welcome, {displayName}!</h1>
+          </div>
 
           {/* Calendar */}
           <div style={{ marginBottom: "2rem" }}>
@@ -41,21 +28,5 @@ function Dashboard({ events, setEvents }) {
     </>
   );
 }
-
-// Optional reusable card styles
-const cardStyle = {
-  backgroundColor: "white",
-  padding: "1.25rem",
-  borderRadius: "12px",
-  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-  minWidth: "250px",
-  flex: "1 1 300px",
-};
-
-const cardTitle = {
-  marginBottom: "0.5rem",
-  fontSize: "1.25rem",
-  fontWeight: "600",
-};
 
 export default Dashboard;

@@ -23,8 +23,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '1rem 2rem',
-    backgroundColor: '#fff',
-    borderBottom: '1px solid #e5e7eb',
+    backgroundColor: 'var(--gray-800)',
   },
   logoContainer: {
     display: 'flex',
@@ -39,7 +38,7 @@ const styles = {
   title: {
     fontSize: '1.5rem',
     fontWeight: '600',
-    color: '#111827',
+    color: '#FFFFFF',
   },
   navLinks: {
     display: 'flex',
@@ -47,7 +46,7 @@ const styles = {
   },
   link: {
     textDecoration: 'none',
-    color: '#374151',
+    color: '#FFFFFF',
     fontWeight: '500',
   }
 };
