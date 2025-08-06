@@ -382,6 +382,16 @@ nav a.signup:hover {
   overflow-y: auto;
 }
 
+/* Update date number colors*/
+.rbc-date-cell button.rbc-button-link {
+  color: var(--gray-700); 
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 2;
+  position: relative;
+}
+
+
 /* Finance Component Styles */
 
 .input {
