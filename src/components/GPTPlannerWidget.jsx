@@ -38,18 +38,32 @@ function GPTPlannerWidget({ events = [], addEvents }) {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    const fullPrompt = `
-Write a friendly Markdown schedule **first**.
+    const todayISO = new Date().toISOString().slice(0,10);
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-THEN output a fenced \`json\` block that is VALID, COMPLETE, and closes with \`\`\`.  
-Return **nothing after** that final fence.
+const fullPrompt = `
+You are a planner. Today is ${todayISO} and the user's timezone is ${tz}.
 
-The JSON must be an array of objects:  
-[ { "title":"…", "weekday":"Mon", "start":"HH:MM", "end":"HH:MM" } ]
+1) Write a friendly Markdown schedule **first**.
 
-Existing calendar:
+2) THEN return ONLY a fenced \`json\` block with an ARRAY of items.
+Each item MUST be:
+{
+  "title": "…",
+  "start": "HH:MM",
+  "end":   "HH:MM",
+  "timezone": "${tz}",
+  // WHEN THE USER GIVES SPECIFIC DATES OR A DATE RANGE:
+  //   include "date": "YYYY-MM-DD" and enumerate EVERY date in that range (inclusive),
+  //   one object per date (no weekday field in that case).
+  // OTHERWISE (no explicit dates given):
+  //   include "weekday": "Mon|Tue|Wed|Thu|Fri|Sat|Sun"
+}
 
+Avoid overlaps with the existing calendar:
 ${calendarSummary}
+
+The JSON must be valid and close with \`\`\`. No text after the final fence.
 
 Now: ${prompt.trim()}
 `;
@@ -67,62 +81,76 @@ Now: ${prompt.trim()}
     }
   }
 
-  /* ─── helper: tolerant parser  ─── */
-  function sloppyParse(block) {
-    // convert curly quotes → straight quotes
-    const txt = block
-      .replace(/[“”]/g, '"')
-      .replace(/[‘’]/g, "'");
-
-    const rows = txt.split(/[\r\n]+/).map(l => l.trim());
-    const out  = [];
-
-    rows.forEach(line => {
-      /* grab "key": "value" pairs */
-      const kv = {};
-      line.replace(/"(\w+)":\s*"([^"]+)"/g, (_, k, v) => {
-        kv[k.toLowerCase()] = v;
-        return '';
-      });
-      if (kv.title && kv.weekday && kv.start && kv.end) out.push(kv);
-    });
-
-    return out;
+  /* ─── robust JSON extractor ─── */
+function extractJsonArrayFromResponse(respText) {
+  const m = respText.match(/```json\s*([\s\S]*?)\s*```/i) ||
+            respText.match(/```json\s*([\s\S]*)$/i);
+  if (!m) return null;
+  let block = m[1]
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/,\s*(?=[}\]])/g, ''); // strip trailing commas
+  const trimmed = block.trim();
+  if (!trimmed.startsWith('[')) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch (e) {
+    console.error('JSON.parse failed:', e, '\nBlock was:\n', trimmed);
+    return null;
   }
+}
 
-  /* ─── JSON → Date events ─── */
-  function jsonToEvents(arr, weekStartDate) {
-     const idx = {
-     sun:0, sunday:0,
-     mon:1, monday:1,
-     tue:2, tuesday:2,
-     wed:3, wednesday:3,
-     thu:4, thursday:4,
-     fri:5, friday:5,
-     sat:6, saturday:6,
- };
-    return arr.flatMap(o => {
+  function makeLocalDate(isoDate, h=0, m=0) {
+  const [Y, M, D] = isoDate.split('-').map(Number);
+  return new Date(Y, M - 1, D, h, m, 0, 0); // local time
+}
+
+function jsonToEvents(arr, weekStartDate) {
+  const idx = {
+    sun:0, sunday:0,
+    mon:1, monday:1,
+    tue:2, tuesday:2,
+    wed:3, wednesday:3,
+    thu:4, thursday:4,
+    fri:5, friday:5,
+    sat:6, saturday:6,
+  };
+
+  return arr.flatMap(o => {
+    const [sH, sM] = (o.start || '00:00').split(':').map(Number);
+    const [eH, eM] = (o.end   || '00:00').split(':').map(Number);
+
+    // Prefer explicit date if present (Aug 13–17 type prompts)
+    if (o.date) {
+      const start = makeLocalDate(o.date, sH, sM);
+      const end   = makeLocalDate(o.date, eH, eM);
+      return [{
+        id: `${start.toISOString()}-${Math.random().toString(36).slice(2)}`,
+        title: o.title,
+        start, end, allDay:false,
+      }];
+    }
+
+    // Fallback: weekday anchored to provided weekStartDate
+    if (o.weekday) {
       const w = idx[o.weekday.toLowerCase()];
       if (w === undefined) return [];
-      const [sH,sM] = o.start.split(':').map(Number);
-      const [eH,eM] = o.end.split(':').map(Number);
-
       const start = new Date(weekStartDate);
       start.setDate(start.getDate() + w);
       start.setHours(sH, sM, 0, 0);
-
       const end = new Date(start);
       end.setHours(eH, eM, 0, 0);
-
       return [{
-        id   : `${start.toISOString()}-${Math.random().toString(36).slice(2)}`,
+        id: `${start.toISOString()}-${Math.random().toString(36).slice(2)}`,
         title: o.title,
-        start,
-        end,
-        allDay:false,
+        start, end, allDay:false,
       }];
-    });
-  }
+    }
+
+    return [];
+  });
+}
+
 
   /* ─── UI ─── */
   return (
@@ -165,17 +193,16 @@ Now: ${prompt.trim()}
                 if (!match) return alert('No JSON found in GPT response.');
 
                 console.log('📦 raw JSON block\n', match[1]);
-                const payload = sloppyParse(match[1]);
-                if (!payload.length) return alert('No usable events found.');
+                const arr = extractJsonArrayFromResponse(response);
+if (!arr) return alert('No valid JSON array found in GPT response.');
 
-                /* anchor to current week’s Monday */
                 const monday = new Date();
-                monday.setHours(0,0,0,0);
-                monday.setDate(monday.getDate() - ((monday.getDay()+6)%7));
+monday.setHours(0,0,0,0);
+monday.setDate(monday.getDate() - ((monday.getDay()+6)%7));
 
-                const evs = jsonToEvents(payload, monday);
-                if (evs.length) addEvents(prev => [...prev, ...evs]);
-                else alert('Parsed zero events.');
+                const evs = jsonToEvents(arr, monday);
+if (evs.length) addEvents(prev => [...prev, ...evs]);
+else alert('Parsed zero events.');
               }}
               style={{ marginTop:8, background:'#16a34a', color:'white',
                        border:'none', borderRadius:4, padding:'6px 12px',
