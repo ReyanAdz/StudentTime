@@ -636,6 +636,7 @@ const loadEvents = async () => {
 
       {/* GPT Planner Widget */}
       <div className="gpt-widget-section">
+        <p>💡 Enter a prompt here and our chat bot can help optimize your schedule! </p>
         <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
       </div>
     </div>
