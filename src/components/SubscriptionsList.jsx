@@ -11,7 +11,7 @@ import { format } from "date-fns";
  */
 export default function SubscriptionsList({ subs = [], removeSub }) {
   if (!subs.length) {
-    return <p className="mt-4 text-gray-500">No subscriptions yet.</p>;
+    return <p style={{ color: "white" }}>No Subscriptions Yet</p>;
   }
 
   return (

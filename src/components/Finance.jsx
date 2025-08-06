@@ -156,75 +156,82 @@ export default function Finance() {
       <div className="finance-wrapper">
         {/* balance box */}
         <section className="balance-box">
+          <div className="save-load-row">
+            <button onClick={saveTransactionsToFirestore} className="btn btn-green">
+              💾 Save Finances
+            </button>
+            <div style={{ flex: 1 }}></div>  {/* Spacer */}
+            <button onClick={loadTransactionsFromFirestore} className="btn btn-blue">
+              📥 Load Finances
+            </button>
+          </div>
+
           <h2>
             ${currentBal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </h2>
-          <p style={{ color: "#4b5563" }}>Current Balance</p>
+          <p style={{ color: "white" }}>Current Balance</p>
 
           <div className="balance-grid">
             <div>
               <p className="balance-income">
                 ${incomeTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              <p style={{ fontSize: ".875rem", color: "#4b5563" }}>Income</p>
+              <p style={{ fontSize: ".875rem", color: "white" }}>Income</p>
             </div>
             <div>
               <p className="balance-expense">
                 ${expenseTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              <p style={{ fontSize: ".875rem", color: "#4b5563" }}>Expenses</p>
+              <p style={{ fontSize: ".875rem", color: "white" }}>Expenses</p>
             </div>
           </div>
 
-          {/* manual add form */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <input
-              type="number"
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              placeholder="Amount"
-              className="input"
-              style={{
-                border: triedAdd && isAmountInvalid ? "1px solid #dc2626" : undefined,
-              }}
-            />
-            <input
-              value={form.desc}
-              onChange={(e) => setForm({ ...form, desc: e.target.value })}
-              placeholder="Description"
-              className="input"
-            />
-            <select
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="input"
-            >
-              {Object.keys(COLOR_MAP).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+          <div className="finance-inputs">
+          <input
+            type="number"
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            placeholder="Amount"
+            className="input"
+            style={{
+              border: triedAdd && isAmountInvalid ? "1px solid #dc2626" : undefined,
+            }}
+          />
+          <input
+            value={form.desc}
+            onChange={(e) => setForm({ ...form, desc: e.target.value })}
+            placeholder="Description"
+            className="input"
+          />
+          <select
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+            className="input"
+          >
+            {Object.keys(COLOR_MAP).map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
 
-            <button
-              type="button"
-              onClick={() => addTransaction(false)}
-              className="btn btn-green"
-              disabled={!canAdd}
-              style={{ marginRight: ".5rem" }}
-            >
-              <Plus size={14} /> Income
-            </button>
-            <button
-              type="button"
-              onClick={() => addTransaction(true)}
-              className="btn btn-red"
-              disabled={!canAdd}
-            >
-              <Minus size={14} /> Expense
-            </button>
-          </div>
-
+          <button
+            type="button"
+            onClick={() => addTransaction(false)}
+            className="btn btn-green"
+            disabled={!canAdd}
+          >
+            <Plus size={14} /> Income
+          </button>
+          <button
+            type="button"
+            onClick={() => addTransaction(true)}
+            className="btn btn-red"
+            disabled={!canAdd}
+          >
+            <Minus size={14} /> Expense
+          </button>
+        </div>
           {/* save / load */}
           <div
             style={{
@@ -234,42 +241,35 @@ export default function Finance() {
               justifyContent: "center",
             }}
           >
-            <button onClick={saveTransactionsToFirestore} className="btn btn-green">
-              💾 Save Finances
-            </button>
-            <button onClick={loadTransactionsFromFirestore} className="btn btn-blue">
-              📥 Load Finances
-            </button>
           </div>
         </section>
 
         {/* Recurring Payments Section */}
-      <div className="card mt-8">
-        <h3 className="text-lg font-semibold mb-4">Recurring Payments</h3>
-        <SubscriptionsList subs={subs} removeSub={removeSub} />
-        <div className="mt-4">
-          {showAddSub ? (
-            <SubscriptionForm
-              uid={uid}
-              addSub={addSub}
-              rollForward={rollForward}
-              onClose={() => setShowAddSub(false)}
-            />
-          ) : (
-            <button onClick={() => setShowAddSub(true)} className="btn btn-green">
-              + Add Subscription
-            </button>
-          )}
+       <div className="recurring-payments-box">
+          <h3>Recurring Payments</h3>
+          <SubscriptionsList subs={subs} removeSub={removeSub} />
+          <div>
+            {showAddSub ? (
+              <SubscriptionForm
+                uid={uid}
+                addSub={addSub}
+                rollForward={rollForward}
+                onClose={() => setShowAddSub(false)}
+              />
+            ) : (
+              <button onClick={() => setShowAddSub(true)} className="btn btn-green">
+                + Add Subscription
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-
 
 
         {/* analytics & transactions */}
         <div className="card-grid">
           {/* pie chart card */}
           <div className="card">
-            <h3>Expenses by category</h3>
+            <p style={{ color: "white" }}>Expenses By Category</p>
             {pieData.length ? (
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
@@ -289,7 +289,7 @@ export default function Finance() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p style={{ textAlign: "center", padding: "2rem 0" }}>
+              <p style={{ textAlign: "center", padding: "2rem 0", color: "white" }}>
                 No expenses yet
               </p>
             )}
@@ -298,7 +298,7 @@ export default function Finance() {
           {/* last transactions */}
           <div className="card">
             <h3
-              style={{ display: "flex", cursor: "pointer", userSelect: "none" }}
+              style={{ display: "flex", cursor: "pointer", userSelect: "none", color: "white"}}
               onClick={() => setShowTx(!showTx)}
             >
               Last transactions
@@ -315,7 +315,7 @@ export default function Finance() {
             {showTx && (
               <div className="txn-list">
                 {transactions.length === 0 ? (
-                  <p style={{ padding: "1rem", color: "#6b7280" }}>
+                  <p style={{ padding: "1rem", color: "white" }}>
                     No transactions yet
                   </p>
                 ) : (
@@ -331,7 +331,7 @@ export default function Finance() {
                         </div>
 
                         <div className="txn-main">
-                          <p style={{ fontSize: ".875rem" }}>{t.description}</p>
+                          <p className="txn-desc">{t.description}</p>
                           <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.category}</p>
                         </div>
                       </div>

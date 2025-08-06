@@ -30,8 +30,8 @@ export default function SubscriptionForm({ uid, addSub, rollForward }) {
 
   return (
     <Card className="p-4 w-full max-w-md">
-      <h3 className="font-semibold mb-3">Add Reoccuring Payments</h3>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <p style={{ color: "white" }}>Add Reoccuring Payments</p>
+      <form onSubmit={handleSubmit} className="subscription-inputs">
         <input
           required
           placeholder="Name"
@@ -59,8 +59,9 @@ export default function SubscriptionForm({ uid, addSub, rollForward }) {
           value={form.firstDue}
           onChange={(e) => setForm({ ...form, firstDue: e.target.value })}
         />
-        <Button type="submit">Save</Button>
+        <Button type="submit" className="btn-green">Save</Button>
       </form>
+
     </Card>
   );
 }

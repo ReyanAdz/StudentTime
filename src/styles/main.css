@@ -78,7 +78,7 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--gray-800);
-  background-color: var(--gray-50);
+  background-color: #9fb7cd;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -383,6 +383,79 @@ nav a.signup:hover {
 }
 
 /* Finance Component Styles */
+
+.input {
+  color: black;
+}
+
+.finance-inputs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem; /* Controls spacing between items */
+  margin-top: 1rem;
+}
+
+.finance-inputs > * {
+  margin: 0.25rem 0;  /* Small vertical spacing */
+}
+
+.subscription-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+  justify-content: center;
+  margin-top: var(--spacing-4);
+}
+
+.subscription-inputs input,
+.subscription-inputs select {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-300);
+  font-size: var(--font-size-sm);
+  min-width: 150px;
+  flex: 1;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.subscription-inputs input:focus,
+.subscription-inputs select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.subscription-inputs button {
+  min-width: 150px;
+  flex: 1;
+}
+
+
+.recurring-payments-box {
+  text-align: center;
+  margin-top: var(--spacing-10);
+  padding: var(--spacing-8);
+  background: #616e96;
+  border-radius: var(--radius-2xl);
+  color: white !important;
+  box-shadow: var(--shadow-lg);
+}
+
+.recurring-payments-box h3 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-6);
+  font-weight: 700;
+  color: white;
+}
+
+.recurring-payments-box p {
+  color: var(--white);
+  font-size: var(--font-size-base);
+}
+
+
+
 .finance-wrapper {
   max-width: 1200px;
   margin: 0 auto;
@@ -398,7 +471,7 @@ nav a.signup:hover {
   text-align: center;
   margin-bottom: var(--spacing-10);
   padding: var(--spacing-8);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: #616e96;
   border-radius: var(--radius-2xl);
   color: var(--white);
 }
@@ -467,6 +540,7 @@ nav a.signup:hover {
   border:1px solid #e5e7eb;
   border-radius:.5rem;
   padding:1.25rem;
+  background: #616e96;
 }
 .card h3 { margin:0 0 1rem 0; font-size:1rem; font-weight:600; }
 
@@ -1211,7 +1285,8 @@ nav a.signup:hover {
   border: 1px solid #e2e8f0;      /* light border */
   border-radius: 8px;
   padding: 1rem 1.25rem;
-  overflow-x: auto;               /* allow tables to scroll */
+  overflow-x: auto;                 /* allow tables to scroll */
+  color: var(--gray-900);     
 }
 
 /* optional: colour + / – dollar amounts */
@@ -1222,3 +1297,13 @@ nav a.signup:hover {
 .gpt-output  .pos { color:#16a34a; }   /* green */
 .gpt-output  .neg { color:#dc2626; }   /* red  */
 
+.input::placeholder {
+  color: black !important;
+  opacity: 1 !important;
+}
+
+.save-load-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
