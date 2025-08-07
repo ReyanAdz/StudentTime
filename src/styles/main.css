@@ -1340,3 +1340,23 @@ nav a.signup:hover {
   align-items: center;
   margin-bottom: var(--spacing-4);
 }
+
+/* Fix white text in calendar time gutter and headers */
+.rbc-time-content,
+.rbc-time-header,
+.rbc-time-gutter,
+.rbc-agenda-time-cell,
+.rbc-agenda-date-cell,
+.rbc-header,
+.rbc-timeslot-group,
+.rbc-time-slot,
+.rbc-time-gutter .rbc-timeslot-group,
+.rbc-time-content .rbc-timeslot-group {
+  color: black !important;
+}
+
+.rbc-time-header .rbc-label,
+.rbc-agenda-view td,
+.rbc-agenda-view th {
+  color: black !important;
+}
