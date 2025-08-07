@@ -6,6 +6,10 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { auth } from '../firebase/firebase-config';
+import { db } from '../firebase/firestore-config';
+import { doc, setDoc, getDoc } from 'firebase/firestore'
+import GPTPlannerWidget from './GPTPlannerWidget';
 
 
 const locales = { 'en-US': enUS };
@@ -35,7 +39,7 @@ async function fetchJSON(pathSegments) {
   }
 }
 
-//normalize and clean text data 
+//clean text data 
 const normText = (v) => (v ?? '').trim().toLowerCase();
 const normNum = (v) => (v ?? '').trim();
 
@@ -122,7 +126,7 @@ function expandScheduleItem(item, titlePrefix, courseKey) {
   return events;
 }
 
-// parse full outline payload to calendar events
+// parse full outline to calendar events
 function outlineToEvents(data, courseKey) {
   const title = data?.info?.title || data?.title || 'Course';
   const sectionLabel = data?.info?.section || data?.section || '';
@@ -144,15 +148,20 @@ function outlineToEvents(data, courseKey) {
   return evs;
 }
 
-/* small util so we can capitalize "summer" -> "Summer" for UI */
+function toDate(input) {
+  if (input instanceof Date) return input;
+  if (input?.seconds) return new Date(input.seconds * 1000); // Firestore Timestamp
+  if (typeof input === "string" || typeof input === "number") return new Date(input); // ISO or raw
+  return null; // fallback
+}
+
+/* capitalize for the ui */
 function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
-/* ---------- component ---------- */
-
 function CalendarView(props) {
-  // accept parent state if provided; else fallback to internal state
+  // use parent value if given, otherwise use default
   const { events: propEvents, setEvents: propSetEvents } = props;
   const [internalEvents, setInternalEvents] = useState([]);
   const events = propEvents !== undefined ? propEvents : internalEvents;
@@ -161,7 +170,35 @@ function CalendarView(props) {
   const updateEvents =
     typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
 
-  // warn in dev if no setter passed
+   useEffect(() => {
+  const loadEvents = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (Array.isArray(data.calendarEvents)) {
+          const parsedEvents = data.calendarEvents.map(event => ({
+            ...event,
+            start: new Date(event.start?.seconds ? event.start.seconds * 1000 : event.start),
+            end: new Date(event.end?.seconds ? event.end.seconds * 1000 : event.end),
+          }));
+          updateEvents(parsedEvents);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading saved events:", err);
+    }
+  };
+
+  loadEvents();
+}, []);
+
+
+  // warn if there is no update function
   useEffect(() => {
     if (typeof propSetEvents !== 'function') {
       console.warn(
@@ -173,8 +210,8 @@ function CalendarView(props) {
     }
   }, [propSetEvents]);
 
-  // Cascading select options
-  const [years, setYears] = useState(['2023', '2024', '2025']); // fallback
+  // select options
+  const [years, setYears] = useState(['2023', '2024', '2025']);
   const [terms, setTerms] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -188,7 +225,7 @@ function CalendarView(props) {
     section: '',
   });
 
-  /* ----- load years on mount ----- */
+  /* when the CalendarView loads get available academic years */
   useEffect(() => {
     (async () => {
       try {
@@ -203,7 +240,7 @@ function CalendarView(props) {
     })();
   }, []);
 
-  /* ----- when year changes, fetch terms ----- */
+  /* when year changes, get terms */
   useEffect(() => {
     if (!formData.year) {
       setTerms([]);
@@ -223,7 +260,7 @@ function CalendarView(props) {
     })();
   }, [formData.year]);
 
-  /* ----- when term changes, fetch departments ----- */
+  /* when term changes, get departments */
   useEffect(() => {
     if (!(formData.year && formData.term)) {
       setDepartments([]);
@@ -246,7 +283,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term]);
 
-  /* ----- when department changes, fetch courses ----- */
+  /* when department changes, get courses */
   useEffect(() => {
     if (!(formData.year && formData.term && formData.department)) {
       setCourses([]);
@@ -270,7 +307,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term, formData.department]);
 
-  /* ----- when course changes, fetch sections ----- */
+  /* when course changes, get sections */
   useEffect(() => {
     if (!(formData.year && formData.term && formData.department && formData.course)) {
       setSections([]);
@@ -295,7 +332,7 @@ function CalendarView(props) {
     })();
   }, [formData.year, formData.term, formData.department, formData.course]);
 
-  /* ----- unified onChange for selects ----- */
+  /* handles changes for all the drop downs */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -308,7 +345,7 @@ function CalendarView(props) {
     }));
   };
 
-  /* ----- fetch + add selected course events ----- */
+  /* get selected courses from SFU and its schedule to calendar*/
   const fetchCourse = async () => {
     const { year, term, department, course, section } = formData;
     if (!year || !term || !department || !course || !section) {
@@ -343,44 +380,49 @@ function CalendarView(props) {
     }
   };
 
-  /* ----- manual click-to-add event ----- */
-  const handleSelectSlot = ({ start }) => {
-  const title = window.prompt("New Event Title:");
+  /* manually add event */
+const handleSelectSlot = ({ start }) => {
+  const title = window.prompt('New Event Title:');
   if (!title) return;
 
-  const timeStr = window.prompt("Start time? (HH:MM 24hr)", "23:59");
+  const timeStr = window.prompt('Start time? (HH:MM 24‑hr)', '23:59');
   if (!timeStr) return;
 
-  const [hour, minute] = timeStr.split(":").map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
   const startTime = new Date(start);
   startTime.setHours(hour, minute, 0);
 
-  const endTimeStr = window.prompt("End time? (optional, HH:MM 24hr — press Enter to skip):");
+  const endTimeStr = window.prompt(
+    'End time? (optional, HH:MM 24‑hr — press Enter to skip):'
+  );
 
   let endTime;
   if (endTimeStr) {
-    const [endHour, endMinute] = endTimeStr.split(":").map(Number);
+    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
     endTime = new Date(start);
     endTime.setHours(endHour, endMinute, 0);
   } else {
-    endTime = new Date(startTime); // use same as start if left blank
+    endTime = new Date(startTime.getTime() + 60_000);
   }
 
-  const newEvent = {
-  id: `${startTime.toISOString()}-${title}-${Math.random().toString(36).slice(2)}`,  // generate unique ID
-  title,
-  start: startTime,
-  end: endTime,
-  allDay: false,
+  updateEvents(prev => [
+    ...prev,
+    {
+      id: `${startTime.toISOString()}-${Math.random().toString(36).slice(2)}`,
+      title,
+      start: startTime,
+      end: endTime,
+      allDay: false,
+    },
+  ]);
 };
 
-  updateEvents(prev => [...prev, newEvent]);
-};
 
 
-  /* ----- click existing event -> delete options ----- */
+
+  /* delete events */
   const handleSelectEvent = (eventObj /*, e */) => {
-    // If this is a course meeting, offer "delete all" option.
+    // delete all option for course
     if (eventObj.eventType === 'course' && eventObj.courseKey) {
       const delAll = window.confirm(
         `Delete ALL meetings for:\n${eventObj.title}\n\nOK = delete all for this course\nCancel = delete just this one meeting`
@@ -390,7 +432,6 @@ function CalendarView(props) {
         return;
       }
     }
-    // else just confirm delete this one
     const delOne = window.confirm(
       `Delete "${eventObj.title}" on ${eventObj.start.toLocaleString()}?`
     );
@@ -400,122 +441,232 @@ function CalendarView(props) {
   };
 
   const calEvents = useMemo(() => events, [events]);
+  const saveEvents = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to save events.");
+    return;
+  }
+
+  try {
+    const userDoc = doc(db, "users", user.uid);
+    await setDoc(userDoc, { calendarEvents: events }, { merge: true });
+    alert("Events saved successfully.");
+  } catch (err) {
+    console.error("Error saving events:", err);
+    alert("Failed to save events.");
+  }
+};
+const loadEvents = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to load events.");
+    return;
+  }
+
+  try {
+    const userDocRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(userDocRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (Array.isArray(data.calendarEvents)) {
+        const parsedEvents = data.calendarEvents.map(ev => ({
+          ...ev,
+          start: toDate(ev.start),
+          end: toDate(ev.end),
+        }));
+        updateEvents(parsedEvents); // ✅ Use parsed version
+        alert("Events loaded successfully.");
+      } else {
+        alert("No calendar events found.");
+      }
+    } else {
+      alert("User document does not exist.");
+    }
+  } catch (err) {
+    console.error("Error loading events:", err);
+    alert("Failed to load events.");
+  }
+};
+
+
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2 style={{ marginBottom: '10px' }}>📘 Add SFU Course to Calendar</h2>
+    <div className="calendar-container">
+      <div className="calendar-header">
+        <h2 className="calendar-title">Create Your Schedule Here!</h2>
+        <p className="calendar-subtitle">Import SFU courses or add custom events to organize your time</p>
+      </div>
 
-      {/* Cascading selectors */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-        {/* Year */}
-        <select name="year" value={formData.year} onChange={handleChange}>
-          <option value="">Year</option>
-          {years.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
+      {/* Course Import Section */}
+      <div className="course-import-section">
+        <h3 className="section-title">Import SFU Courses</h3>
+        <div className="course-selectors">
+          {/* Year */}
+          <div className="selector-group">
+            <label className="selector-label">Year</label>
+            <select 
+              name="year" 
+              value={formData.year} 
+              onChange={handleChange}
+              className="selector-input"
+            >
+              <option value="">Select Year</option>
+              {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Term */}
-        <select
-          name="term"
-          value={formData.term}
-          onChange={handleChange}
-          disabled={!formData.year}
-        >
-          <option value="">Term</option>
-          {terms.map(t => (
-            <option key={t} value={t}>{capitalize(t)}</option>
-          ))}
-        </select>
+          {/* Term */}
+          <div className="selector-group">
+            <label className="selector-label">Term</label>
+            <select
+              name="term"
+              value={formData.term}
+              onChange={handleChange}
+              disabled={!formData.year}
+              className="selector-input"
+            >
+              <option value="">Select Term</option>
+              {terms.map(t => (
+                <option key={t} value={t}>{capitalize(t)}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Department */}
-        <select
-          name="department"
-          value={formData.department}
-          onChange={handleChange}
-          disabled={!formData.term}
-        >
-          <option value="">Dept</option>
-          {departments.map(d => (
-            <option key={d} value={d}>{d.toUpperCase()}</option>
-          ))}
-        </select>
+          {/* Department */}
+          <div className="selector-group">
+            <label className="selector-label">Department</label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              disabled={!formData.term}
+              className="selector-input"
+            >
+              <option value="">Select Department</option>
+              {departments.map(d => (
+                <option key={d} value={d}>{d.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Course number */}
-        <select
-          name="course"
-          value={formData.course}
-          onChange={handleChange}
-          disabled={!formData.department}
-        >
-          <option value="">Course #</option>
-          {courses.map(c => (
-            <option key={c} value={c}>{c.toUpperCase()}</option>
-          ))}
-        </select>
+          {/* Course number */}
+          <div className="selector-group">
+            <label className="selector-label">Course</label>
+            <select
+              name="course"
+              value={formData.course}
+              onChange={handleChange}
+              disabled={!formData.department}
+              className="selector-input"
+            >
+              <option value="">Select Course</option>
+              {courses.map(c => (
+                <option key={c} value={c}>{c.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Section */}
-        <select
-          name="section"
-          value={formData.section}
-          onChange={handleChange}
-          disabled={!formData.course}
-        >
-          <option value="">Section</option>
-          {sections.map(s => (
-            <option key={s} value={s}>{s.toUpperCase()}</option>
-          ))}
-        </select>
+          {/* Section */}
+          <div className="selector-group">
+            <label className="selector-label">Section</label>
+            <select
+              name="section"
+              value={formData.section}
+              onChange={handleChange}
+              disabled={!formData.course}
+              className="selector-input"
+            >
+              <option value="">Select Section</option>
+              {sections.map(s => (
+                <option key={s} value={s}>{s.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-        <button onClick={fetchCourse} disabled={!formData.section}>
-          Add Course
-        </button>
-      </div>
+        <div className="course-actions">
+          <button 
+            onClick={fetchCourse} 
+            disabled={!formData.section}
+            className="btn btn-primary"
+          >
+            Add Course to Calendar
+          </button>
+        </div>
+      </div>
 
-      {/* Calendar */}
-      <div style={{ height: '80vh' }}>
-        <Calendar
-            localizer={localizer}
-            events={calEvents}
-            components={{ event: CustomEvent }}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ backgroundColor: 'white' }}
-            selectable
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-            view={view}
-            onView={setView}
-            views={['month', 'week', 'day', 'agenda']}
-            /*
-            popup
-            showMultiDayTimes
-            dayLayoutAlgorithm="no-overlap"
-            */
-            date={currentDate}
-            onNavigate={setCurrentDate}
-        />
-      </div>
-    </div>
-  );
-}
-function CustomEvent({ event }) {
-  const start = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const end = event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      {/* Calendar Actions */}
+      <div className="calendar-actions">
+        <div className="action-buttons">
+          <button onClick={saveEvents} className="btn btn-secondary">
+            💾 Save Calendar
+          </button>
+          <button onClick={loadEvents} className="btn btn-secondary">
+            📂 Load Saved Events
+          </button>
+        </div>
+        <div className="calendar-info">
+          <p>💡 Click on any date to add a custom event</p>
+          <p>💡 Click on events to delete them</p>
+        </div>
+      </div>
 
-  const showTime = start === end ? start : `${start} – ${end}`;
+      {/* Calendar */}
+      <div className="calendar-wrapper">
+        <Calendar
+          localizer={localizer}
+          events={calEvents}
+          components={{ event: CustomEvent }}
+          startAccessor="start"
+          endAccessor="end"
+          selectable
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+          view={view}
+          onView={setView}
+          views={['month', 'week', 'day', 'agenda']}
+          date={currentDate}
+          onNavigate={setCurrentDate}
+          className="main-calendar"
+        />
+      </div>
 
-  const campus = event?.title?.match(/\((.*?)\)/)?.[1] || '';
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8em' }}>
-      <strong>{event.title.replace(/\s*\(.*?\)\s*/, '')}</strong>
-      <span>{showTime}</span>
-      {campus && <span style={{ fontStyle: 'italic', color: '#d1d5db' }}>{campus} Campus</span>}
+      {/* GPT Planner Widget */}
+      <div className="gpt-widget-section">
+        <p>💡 Enter a prompt here and our chat bot can help optimize your schedule! </p>
+        <GPTPlannerWidget events={calEvents} addEvents={updateEvents} />
+      </div>
     </div>
   );
 }
 
+function CustomEvent({ event, view }) {
+  const startStr = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endStr =
+    event.end &&
+    event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const isSameMinute = !endStr || Math.abs(event.end - event.start) <= 60_000;
+  const showTime = isSameMinute ? startStr : `${startStr} – ${endStr}`;
+
+  /* remove section numbers from calendar */
+  const cleanTitle = event.title.split('–')[0].trim();
+  const campus = event.title.match(/\((.*?)\)/)?.[1] || '';
+
+  return (
+    <div className="custom-event">
+      <div className="event-title">{cleanTitle}</div>
+      <div className="event-time">{showTime}</div>
+      {campus && (
+        <div className="event-campus">
+          {campus} Campus
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default CalendarView;

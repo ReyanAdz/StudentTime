@@ -1,10 +1,8 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=19726696&assignment_repo_type=AssignmentRepo)
-
 # PROJECT TITLE
 StudentTime
 
 # Group Members
-Team Name: 3 Rivers  
+Team Name: 3 Rivers  
 Japnam Singh Mahal
 Pavel Villing
 Reyan Adzijaj
@@ -18,20 +16,20 @@ This application is a student-centered academic planner and budgeting tool for S
 
 The teaching team will follow these exact instructions to deploy and evaluate the application. Please ensure accuracy.
 
-#  Prerequisites
-- Node.js (v18+): https://nodejs.org/  (npm comes with Node.js)
+#  Prerequisites
+- Node.js (v18+): https://nodejs.org/  (npm comes with Node.js)
 - Git: https://github.com/CMPT-276-SUMMER-2025/final-project-3-rivers/tree/main#
 - Modern web browser (Chrome, Google, etc.)
 
-# Insatlling Node,js
-     - Visit the [Node.js official website](https://nodejs.org/)
-     - Download the version suitable for your operating system (Windows, macOS, or Linux)
-     - Run the installer and follow the prompts (include npm when prompted)
-     - To verify installation, open a terminal and run:
-    ```bash
-    node -v
-    npm -v
-    ```
+# Installing Node,js
+     - Visit the [Node.js official website](https://nodejs.org/)
+     - Download the version suitable for your operating system (Windows, macOS, or Linux)
+     - Run the installer and follow the prompts (include npm when prompted)
+     - To verify installation, open a terminal and run:
+    ```bash
+    node -v
+    npm -v
+    ```
 ### Deployment Steps
 
 # 1. Clone the repository
@@ -54,3 +52,4 @@ Starts the local development server. Visit:
 http://localhost:5173
 ```
 The app should now be running in your browser.
+README.

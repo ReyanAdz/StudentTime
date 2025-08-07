@@ -1,80 +1,100 @@
-/* src/components/Finance.jsx */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-
+import GPTFinanceWidget from "./GPTFinanceAdvice";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import {
-  Plus,
-  Minus,
-  CreditCard,
-  Music,
-  Building,
-  ChevronDown,
-  Search,
-} from "lucide-react";
+import { Plus, Minus, ChevronDown } from "lucide-react";
 
-/* ---------- colour map (6 categories) ---------- */
-const COLOR_MAP = {
-  Entertainment: "#3B82F6",          // blue
-  Food:           "#10B981",          // green
-  Transport:      "#F59E0B",          // orange
-  Education:      "#8B5CF6",          // purple
-  "Health and Wellness": "#EC4899",   // pink
-  Other:          "#64748B",          // gray
+import { auth } from "../firebase/firebase-config";
+import { db } from "../firebase/firestore-config";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+
+import { useSubscriptions } from "./useSubscriptions.jsx";
+import SubscriptionsList from "./SubscriptionsList";
+import SubscriptionForm from "./SubscriptionForm";
+
+import entertainmentIcon from "../assets/entertainment.png";
+import transportIcon from "../assets/transportation.png";
+import educationIcon from "../assets/education.jpeg";
+import foodIcon from "../assets/food.png";
+import incomeIcon from "../assets/moneysign.png";
+import reoccuringpaymentIcon from "../assets/reoccuringpayment.png";
+import healthIcon from "../assets/health.png";
+import otherIcon from "../assets/other.png";
+
+const ICON_MAP = {
+  Entertainment: entertainmentIcon,
+  Transport: transportIcon,
+  Education: educationIcon,
+  Food: foodIcon,
+  Income: incomeIcon,
+  "Health and Wellness": healthIcon,
+  ReoccuringPayment: reoccuringpaymentIcon,
+  Other: otherIcon
 };
 
-/* ---------- component ---------- */
+/* ---------- colour map ---------- */
+const COLOR_MAP = {
+  Entertainment: "#3B82F6",
+  Food: "#10B981",
+  Transport: "#F59E0B",
+  Education: "#8B5CF6",
+  "Health and Wellness": "#EC4899",
+  Subscription: "#F87171",
+  Other: "#64748B",
+};
+
 export default function Finance() {
-  /* master transaction list – start empty */
+  /* manual transactions */
   const [transactions, setTransactions] = useState([]);
-
-  /* collapsible “Last transactions” card */
   const [showTx, setShowTx] = useState(true);
+  const [form, setForm] = useState({ desc: "", amount: "", category: "Other" });
+  const [triedAdd, setTriedAdd] = useState(false);
+  const [showAddSub, setShowAddSub] = useState(false);
 
-  /* form state */
-  const [form, setForm] = useState({
-    desc: "",
-    amount: "",
-    category: "Other",
-  });
 
-  /* ---- helpers ---- */
+  /* subscriptions */
+  const uid = auth.currentUser?.uid;
+  const { subs, addSub, removeSub, rollForward } = useSubscriptions(
+    uid,
+    (tx) => setTransactions((prev) => [tx, ...prev]) // push new expense instantly
+  );
 
-  /** push a new transaction; positive = income, negative = expense */
+  /* run rollForward on mount & whenever subscriptions change */
+  useEffect(() => {
+    if (uid && subs.length) rollForward();
+  }, [uid, subs, rollForward]);
+
+  /* manual add */
   const addTransaction = (asExpense = false) => {
+    setTriedAdd(true);
     const amt = parseFloat(form.amount);
     if (!form.desc || Number.isNaN(amt)) return;
-
     setTransactions((prev) => [
       {
         id: prev.length + 1,
         description: form.desc,
-        method: "Manual", // could be extended later
+        method: "Manual",
         date: new Date().toISOString().split("T")[0],
         amount: asExpense ? -Math.abs(amt) : Math.abs(amt),
-        category: form.category,
+        category: asExpense ? form.category : "Income",
         icon: asExpense ? <Minus size={16} /> : <Plus size={16} />,
       },
       ...prev,
     ]);
-
-    /* reset inputs */
     setForm({ desc: "", amount: "", category: "Other" });
+    setTriedAdd(false);
   };
 
-  /* totals */
+  /* totals & chart data */
   const incomeTotal = transactions
     .filter((t) => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-
+    .reduce((s, t) => s + t.amount, 0);
   const expenseTotal = transactions
     .filter((t) => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
   const currentBal = incomeTotal - expenseTotal;
 
-  /* build chart data from expense rows */
   const expenseByCat = transactions
     .filter((t) => t.amount < 0)
     .reduce((acc, t) => {
@@ -89,51 +109,98 @@ export default function Finance() {
     color: COLOR_MAP[name] || COLOR_MAP.Other,
   }));
 
-  /* ---------- render ---------- */
+  const isAmountInvalid = form.amount !== "" && Number.isNaN(parseFloat(form.amount));
+  const canAdd = form.desc.trim() !== "" && !Number.isNaN(parseFloat(form.amount));
+
+  /* Firestore SAVE / LOAD  */
+  const saveTransactionsToFirestore = async () => {
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in to save your finances.");
+    try {
+      const cleaned = transactions.map(({ icon, ...rest }) => rest);
+      await setDoc(
+        doc(db, "users", user.uid),
+        { financeData: { transactions: cleaned } },
+        { merge: true }
+      );
+      alert("Finance data saved!");
+    } catch (err) {
+      console.error("FIRESTORE SAVE ERROR:", err);
+      alert("Something went wrong while saving.");
+    }
+  };
+
+  const loadTransactionsFromFirestore = async () => {
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in to load your finances.");
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.data();
+      if (data?.financeData?.transactions) {
+        setTransactions(data.financeData.transactions);
+        alert("Finance data loaded!");
+      } else {
+        alert("No saved data found.");
+      }
+    } catch (err) {
+      console.error("Failed to load:", err);
+      alert("Something went wrong while loading.");
+    }
+  };
+
+  /* ─────────── UI ─────────── */
   return (
     <>
       <Navbar />
 
       <div className="finance-wrapper">
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem" }}>
-          StudentTime · Finance
-        </h1>
-
-        {/* tiny search icon placeholder */}
-        <Search size={20} />
-
-        {/* -------- balance box -------- */}
+        {/* balance box */}
         <section className="balance-box">
-          <h2>${currentBal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
-          <p style={{ color: "#4b5563" }}>Current Balance</p>
+          <div className="save-load-row">
+            <button onClick={saveTransactionsToFirestore} className="btn btn-green">
+              💾 Save Finances
+            </button>
+            <div style={{ flex: 1 }}></div>
+            <button onClick={loadTransactionsFromFirestore} className="btn btn-blue">
+              📥 Load Finances
+            </button>
+          </div>
+
+          <h2>
+            ${currentBal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </h2>
+          <p style={{ color: "white" }}>Current Balance</p>
 
           <div className="balance-grid">
             <div>
               <p className="balance-income">
                 ${incomeTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              <p style={{ fontSize: ".875rem", color: "#4b5563" }}>Income</p>
+              <p style={{ fontSize: ".875rem", color: "white" }}>Income</p>
             </div>
             <div>
               <p className="balance-expense">
                 ${expenseTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
-              <p style={{ fontSize: ".875rem", color: "#4b5563" }}>Expenses</p>
+              <p style={{ fontSize: ".875rem", color: "white" }}>Expenses</p>
             </div>
           </div>
 
-          {/* ---- quick‑add form ---- */}
-          <input
-            value={form.desc}
-            onChange={(e) => setForm({ ...form, desc: e.target.value })}
-            placeholder="Description"
-            className="input"
-          />
+          <div className="finance-inputs">
           <input
             type="number"
             value={form.amount}
             onChange={(e) => setForm({ ...form, amount: e.target.value })}
             placeholder="Amount"
+            className="input"
+            style={{
+              border: triedAdd && isAmountInvalid ? "1px solid #dc2626" : undefined,
+            }}
+          />
+          <input
+            value={form.desc}
+            onChange={(e) => setForm({ ...form, desc: e.target.value })}
+            placeholder="Description"
             className="input"
           />
           <select
@@ -149,23 +216,60 @@ export default function Finance() {
           </select>
 
           <button
+            type="button"
             onClick={() => addTransaction(false)}
             className="btn btn-green"
-            style={{ marginRight: ".5rem" }}
+            disabled={!canAdd}
           >
             <Plus size={14} /> Income
           </button>
-          <button onClick={() => addTransaction(true)} className="btn btn-red">
+          <button
+            type="button"
+            onClick={() => addTransaction(true)}
+            className="btn btn-red"
+            disabled={!canAdd}
+          >
             <Minus size={14} /> Expense
           </button>
+        </div>
+          {/* save / load */}
+          <div
+            style={{
+              marginTop: "1rem",
+              display: "flex",
+              gap: "0.75rem",
+              justifyContent: "center",
+            }}
+          >
+          </div>
         </section>
 
-        {/* -------- grid: chart + transactions -------- */}
+        {/* Recurring Payments Section */}
+       <div className="recurring-payments-box">
+          <h3>Recurring Payments</h3>
+          <SubscriptionsList subs={subs} removeSub={removeSub} />
+          <div>
+            {showAddSub ? (
+              <SubscriptionForm
+                uid={uid}
+                addSub={addSub}
+                rollForward={rollForward}
+                onClose={() => setShowAddSub(false)}
+              />
+            ) : (
+              <button onClick={() => setShowAddSub(true)} className="btn btn-green">
+                + Add Subscription
+              </button>
+            )}
+          </div>
+        </div>
+
+
+        {/* analytics & transactions */}
         <div className="card-grid">
           {/* pie chart card */}
           <div className="card">
-            <h3>Expenses by category</h3>
-
+            <p style={{ color: "white" }}>Expenses By Category</p>
             {pieData.length ? (
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
@@ -185,32 +289,19 @@ export default function Finance() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p style={{ textAlign: "center", padding: "2rem 0" }}>
+              <p style={{ textAlign: "center", padding: "2rem 0", color: "white" }}>
                 No expenses yet
               </p>
             )}
-
-            {pieData.length > 0 && (
-              <div className="legend">
-                {pieData.map((p) => (
-                  <span key={p.name}>
-                    <svg width="10" height="10" style={{ marginRight: 4 }}>
-                      <rect width="10" height="10" fill={p.color} />
-                    </svg>
-                    {p.name}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* transactions card */}
+          {/* last transactions */}
           <div className="card">
             <h3
-              style={{ display: "flex", cursor: "pointer", userSelect: "none" }}
+              style={{ display: "flex", cursor: "pointer", userSelect: "none", color: "white"}}
               onClick={() => setShowTx(!showTx)}
             >
-              Last transactions
+              Last transactions
               <ChevronDown
                 size={18}
                 style={{
@@ -223,43 +314,62 @@ export default function Finance() {
 
             {showTx && (
               <div className="txn-list">
-                {transactions.length === 0 && (
-                  <p style={{ padding: "1rem", color: "#6b7280" }}>
+                {transactions.length === 0 ? (
+                  <p style={{ padding: "1rem", color: "white" }}>
                     No transactions yet
                   </p>
-                )}
+                ) : (
+                  transactions.map((t, idx) => (
+                    <div key={t.id ?? idx} className="txn" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <div className="txn-icon">
+                          <img
+                            src={ICON_MAP[t.category] || otherIcon}
+                            alt={t.category}
+                            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                        </div>
 
-                {transactions.map((t) => (
-                  <div key={t.id} className="txn">
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div className="txn-icon">{t.icon}</div>
-                      <div className="txn-main">
-                        <p style={{ fontSize: ".875rem" }}>{t.description}</p>
-                        <p style={{ fontSize: ".75rem", color: "#6b7280" }}>
-                          {t.category}
+                        <div className="txn-main">
+                          <p className="txn-desc">{t.description}</p>
+                          <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.category}</p>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <p className={"txn-amt " + (t.amount > 0 ? "txn-green" : "txn-red")}>
+                          {t.amount > 0 ? "+" : ""}
+                          {t.amount.toFixed(2)}
                         </p>
+                        <p style={{ fontSize: ".75rem", color: "#6b7280" }}>{t.date}</p>
+                        <button
+                          className="btn btn-grey"
+                          style={{ fontSize: ".75rem", marginTop: "0.25rem" }}
+                          onClick={() =>
+                            setTransactions((prev) => prev.filter((_, i) => i !== idx))
+                          }
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
+                  ))
 
-                    <div style={{ textAlign: "right" }}>
-                      <p
-                        className={
-                          "txn-amt " + (t.amount > 0 ? "txn‑green" : "txn‑red")
-                        }
-                      >
-                        {t.amount > 0 ? "+" : ""}
-                        {t.amount.toFixed(2)}
-                      </p>
-                      <p style={{ fontSize: ".75rem", color: "#6b7280" }}>
-                        {t.date}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                )}
               </div>
             )}
           </div>
         </div>
+
+        {/* GPT widget */}
+        <GPTFinanceWidget
+          financeData={{
+            currentBal,
+            incomeTotal,
+            expenseTotal,
+            expenseByCat,
+            transactions,
+          }}
+        />
       </div>
 
       <Footer />
