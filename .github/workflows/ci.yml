@@ -1,39 +1,44 @@
-name: CI / CD Pipeline
+# .github/workflows/ci.yml
+
+name: Run Vitest and Deploy
 
 on:
   push:
-    branches: [ main, iteration2 ]    # tests on both
+    branches: [main]  # Only deploy from main branch
   pull_request:
-    branches: [ main, iteration2 ]    # PR previews
+    branches: [main]
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - run: npm install         # deterministic install
-      - run: npm test        # Vitest
 
-  # 2️⃣  Continuous-Deployment: ship to Firebase *only* after tests pass
-  deploy:
-    needs: test              # <-- wait for CI
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'   # deploy *only* when main updates
-    permissions:
-      contents: read
-      deployments: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm install && npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Vitest
+        run: npm run test
+
+      - name: Build app
+        run: npm run build
+            - name: Show first 80 chars of service-account secret  # <-- TEMP debug
+            
+        run: |
+          echo "LEN=$(echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | wc -c)"
+          echo "HEAD=$(echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' | head -c 80)"
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SA }}
-          projectId: studenttime-prod        # Firebase project ID
-          channelId: live                    # change to "preview" for PR URLs
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+          channelId: live
+          projectId: studenttime-1b277
