@@ -21,7 +21,7 @@ The teaching team will follow these exact instructions to deploy and evaluate th
 - Git: https://github.com/CMPT-276-SUMMER-2025/final-project-3-rivers/tree/main#
 - Modern web browser (Chrome, Google, etc.)
 
-# Insatlling Node,js
+# Installing Node,js
      - Visit the [Node.js official website](https://nodejs.org/)
      - Download the version suitable for your operating system (Windows, macOS, or Linux)
      - Run the installer and follow the prompts (include npm when prompted)
@@ -32,7 +32,7 @@ The teaching team will follow these exact instructions to deploy and evaluate th
     ```
 ### Deployment Steps
 
-# 1. lone the repository
+# 1. Clone the repository
 ```bash
 git clone https://github.com/CMPT-276-SUMMER-2025/final-project-3-rivers.git
 cd final-project-3-rivers
