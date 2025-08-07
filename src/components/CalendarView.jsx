@@ -9,7 +9,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { auth } from '../firebase/firebase-config';
 import { db } from '../firebase/firestore-config';
 import { doc, setDoc, getDoc } from 'firebase/firestore'
-import GPTPlannerWidget from './GPTPlannerWidget'; // or '../components/GPTPlannerWidget' depending on the file structure
+import GPTPlannerWidget from './GPTPlannerWidget';
 
 
 const locales = { 'en-US': enUS };

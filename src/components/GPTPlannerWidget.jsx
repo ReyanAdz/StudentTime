@@ -3,22 +3,14 @@ import { generateGPTResponse } from '../utils/gpt';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-/**
- * GPTPlannerWidget
- *
- * Props
- *   events    – calendar events array
- *   addEvents – setter from CalendarView (optional)
- */
 function GPTPlannerWidget({ events = [], addEvents }) {
-  /* ───────────────────────── state ───────────────────────── */
   const [prompt,   setPrompt]   = useState(
     ''
   );
   const [response, setResponse] = useState('');
   const [loading,  setLoading]  = useState(false);
 
-  /* ─── calendar summary sent to GPT ─── */
+  /* calendar summary sent to GPT */
   const calendarSummary = useMemo(() => {
     if (!events.length) return 'The user has no events.';
     const wdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -35,7 +27,7 @@ function GPTPlannerWidget({ events = [], addEvents }) {
       .map(([d,s]) => `**${d}:**\n`+s.map(x=>`• ${x}`).join('\n')).join('\n\n');
   }, [events]);
 
-  /* ─── send prompt ─── */
+  /* send prompt */
   async function handleSubmit(e) {
     e.preventDefault();
     if (!prompt.trim()) return;
@@ -91,7 +83,6 @@ Now: ${prompt.trim()}
     }
   }
 
-  /* ─── robust JSON extractor (unchanged behavior) ─── */
   function extractJsonArrayFromResponse(respText) {
     const m = respText.match(/```json\s*([\s\S]*?)\s*```/i) ||
               respText.match(/```json\s*([\s\S]*)$/i);
@@ -138,10 +129,9 @@ Now: ${prompt.trim()}
     });
   }
 
-  /* ─── UI ─── */
+  /* UI */
   return (
     <div style={{ marginTop:'1.5rem' }}>
-      {/* input bar */}
       <form onSubmit={handleSubmit} style={{ display:'flex', gap:8 }}>
         <input
           value={prompt}
@@ -159,7 +149,6 @@ Now: ${prompt.trim()}
         </button>
       </form>
 
-      {/* output — render ONLY the markdown schedule nicely */}
       {response && (
         <>
           <div className="gpt-output" style={{ color:'#0f172a', marginTop:8 }}>
@@ -179,7 +168,7 @@ Now: ${prompt.trim()}
             </ReactMarkdown>
           </div>
 
-          {/* keep your existing Add-to-calendar behavior */}
+
           {addEvents && (
             <button
               onClick={() => {

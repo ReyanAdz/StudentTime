@@ -60,7 +60,7 @@ export default function Finance() {
     (tx) => setTransactions((prev) => [tx, ...prev]) // push new expense instantly
   );
 
-  /* run rollForward on mount & whenever subs change */
+  /* run rollForward on mount & whenever subscriptions change */
   useEffect(() => {
     if (uid && subs.length) rollForward();
   }, [uid, subs, rollForward]);
@@ -112,7 +112,7 @@ export default function Finance() {
   const isAmountInvalid = form.amount !== "" && Number.isNaN(parseFloat(form.amount));
   const canAdd = form.desc.trim() !== "" && !Number.isNaN(parseFloat(form.amount));
 
-  /* Firestore SAVE / LOAD (unchanged) */
+  /* Firestore SAVE / LOAD  */
   const saveTransactionsToFirestore = async () => {
     const user = auth.currentUser;
     if (!user) return alert("Please log in to save your finances.");
@@ -125,7 +125,7 @@ export default function Finance() {
       );
       alert("Finance data saved!");
     } catch (err) {
-      console.error("🔥 FIRESTORE SAVE ERROR:", err);
+      console.error("FIRESTORE SAVE ERROR:", err);
       alert("Something went wrong while saving.");
     }
   };
@@ -160,7 +160,7 @@ export default function Finance() {
             <button onClick={saveTransactionsToFirestore} className="btn btn-green">
               💾 Save Finances
             </button>
-            <div style={{ flex: 1 }}></div>  {/* Spacer */}
+            <div style={{ flex: 1 }}></div>
             <button onClick={loadTransactionsFromFirestore} className="btn btn-blue">
               📥 Load Finances
             </button>

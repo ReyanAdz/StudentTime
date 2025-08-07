@@ -1,6 +1,5 @@
-// src/components/Header.jsx
 import { Link } from 'react-router-dom';
-import logo from '../assets/logo.png'; // adjust if your logo path is different
+import logo from '../assets/logo.png';
 
 function Header() {
   return (

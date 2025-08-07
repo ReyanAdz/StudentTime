@@ -1,14 +1,8 @@
-// src/components/SubscriptionsList.jsx
 import React from "react";
 import { Button } from "../ui/button.jsx";
 import { Card }   from "../ui/card.jsx";
 import { format } from "date-fns";
 
-/**
- * props
- *   subs      – array of subscription docs
- *   removeSub – helper to delete one (passed down from Finance)
- */
 export default function SubscriptionsList({ subs = [], removeSub }) {
   if (!subs.length) {
     return <p style={{ color: "white" }}>No Subscriptions Yet</p>;

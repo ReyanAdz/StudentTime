@@ -13,16 +13,9 @@ import {
 } from "firebase/firestore";
 import { Minus } from "lucide-react";
 
-/**
- * useSubscriptions
- * @param uid        current user's UID
- * @param pushTxn    optional callback(txObj) -> void
- *                  (lets the parent immediately append the expense row)
- */
 export function useSubscriptions(uid, pushTxn) {
   const [subs, setSubs] = useState([]);
 
-  /* live Firestore listener */
   useEffect(() => {
     if (!uid) return;
     const q = query(collection(db, "subscriptions"), where("uid", "==", uid));
@@ -32,20 +25,18 @@ export function useSubscriptions(uid, pushTxn) {
     return off;
   }, [uid]);
 
-  /* CRUD helpers */
   const addSub = ({ name, amount, frequency, firstDue }) =>
     addDoc(collection(db, "subscriptions"), {
       uid,
       name,
       amount,
-      frequency, // 'monthly' | 'weekly' | 'yearly'
+      frequency,
       nextDue: Timestamp.fromDate(firstDue),
       createdAt: Timestamp.now(),
     });
 
   const removeSub = (id) => deleteDoc(doc(db, "subscriptions", id));
 
-  /* roll any past-due subs forward */
   const rollForward = useCallback(async () => {
     if (!uid || !subs.length) return;
     const today = new Date();
@@ -55,7 +46,6 @@ export function useSubscriptions(uid, pushTxn) {
         const due = s.nextDue.toDate();
         if (due > today) return; // not yet
 
-        /* 1) write matching expense */
         const txnRef = await addDoc(collection(db, "transactions"), {
           uid,
           category: "Subscription",
@@ -65,7 +55,6 @@ export function useSubscriptions(uid, pushTxn) {
           createdAt: Timestamp.now(),
         });
 
-        /* 2) push to UI immediately (if callback provided) */
         pushTxn?.({
           id: txnRef.id,
           description: s.name,
@@ -76,7 +65,6 @@ export function useSubscriptions(uid, pushTxn) {
           icon: <Minus size={16} />,
         });
 
-        /* 3) advance nextDue */
         const next = new Date(due);
         switch (s.frequency) {
           case "weekly":
@@ -87,7 +75,7 @@ export function useSubscriptions(uid, pushTxn) {
             break;
           default:
             next.setMonth(next.getMonth() + 1);
-            break; // monthly
+            break; 
         }
         await updateDoc(doc(db, "subscriptions", s.id), {
           nextDue: Timestamp.fromDate(next),

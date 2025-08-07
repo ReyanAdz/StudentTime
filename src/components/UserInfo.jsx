@@ -1,4 +1,3 @@
-// src/components/UserInfo.jsx
 import { auth } from '../firebase/firebase-config';
 import { useEffect, useState } from 'react';
 

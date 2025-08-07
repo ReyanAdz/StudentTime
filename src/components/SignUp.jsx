@@ -1,4 +1,3 @@
-// src/components/SignUp.jsx
 import React, { useState } from 'react';
 import { auth } from '../firebase/firebase-config';
 import { db } from '../firebase/firestore-config';

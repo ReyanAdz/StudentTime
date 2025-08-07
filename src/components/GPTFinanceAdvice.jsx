@@ -1,17 +1,6 @@
-// src/components/GPTFinanceWidget.jsx
 import React, { useState, useMemo } from "react";
 import { generateGPTResponse } from "../utils/gpt";
 
-/**
- * GPTFinanceWidget
- *
- * Props
- *   financeData → {
- *     currentBal, incomeTotal, expenseTotal,
- *     expenseByCat (object),
- *     transactions      (array, newest first)
- *   }
- */
 export default function GPTFinanceWidget({ financeData }) {
   const [prompt,  setPrompt]  = useState("");
   const [answer,  setAnswer]  = useState("");
@@ -70,7 +59,7 @@ ${expTx.map(txFmt).join("\n") || "• —"}
 `.trim();
   }, [financeData,]);
 
-  /* ── ask GPT ────────────────────────────────────────────── */
+  /* ask GPT */
   async function handleAsk(e) {
     e.preventDefault();
     const q = prompt.trim();
@@ -97,10 +86,9 @@ USER QUESTION: ${q}
     }
   }
 
-  /* ── UI ─────────────────────────────────────────────────── */
+  /* UI */
   return (
     <section style={{ marginTop: "2rem" }}>
-      {/*<h3 style={{ fontWeight: 600, marginBottom: ".5rem" }}>Ask GPT 💸</h3>*/}
 
       <form onSubmit={handleAsk} style={{ display: "flex", gap: 8 }}>
         <input

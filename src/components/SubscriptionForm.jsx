@@ -21,8 +21,8 @@ export default function SubscriptionForm({ uid, addSub, rollForward }) {
       firstDue: new Date(form.firstDue),
     });
 
-    /* 🔄 immediately check if that new sub is already due
-       (e.g. user picked a past date) */
+    /* check if that new subscription is already due
+       needed if user selected previous date */
     rollForward?.();
 
     setForm({ ...form, name: "", amount: "" });

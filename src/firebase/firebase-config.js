@@ -1,4 +1,3 @@
-// src/firebase/firebase-config.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
@@ -14,4 +13,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-export { auth, firebaseConfig }; // ✅ now this can be imported elsewhere
+export { auth, firebaseConfig };
