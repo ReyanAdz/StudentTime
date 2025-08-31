@@ -9,8 +9,7 @@ Reyan Adzijaj
 Travis Johal
 
 # Description
-This application is a student-centered academic planner and budgeting tool for SFU students. Built using React, SFU course schedule API
- and OpenAI APIs, it allows students to manage their course schedules and finances in one unified platform with the support of AI.
+This application is a student-centered academic planner and budgeting tool for SFU students. Built using React, SFU course schedule API and OpenAI APIs, it allows students to manage their course schedules and finances in one unified platform with the support of AI.
 
 # Step-by-step instructions for the project to be deployed locally
 
