@@ -8,513 +8,276 @@ import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { auth } from '../firebase/firebase-config';
 import { db } from '../firebase/firestore-config';
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import GPTPlannerWidget from './GPTPlannerWidget';
 
+// provider-powered catalog hook (SFU + UBC)
+import { useCatalog } from '../catalog/useCatalog';
 
 const locales = { 'en-US': enUS };
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-});
-
-const BASE = 'https://www.sfu.ca/bin/wcm/course-outlines';
-
-
-async function fetchJSON(pathSegments) {
-  const qs = pathSegments.filter(Boolean).join('/');
-  const url = `${BASE}?${qs}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`HTTP ${res.status} ${res.statusText} – ${txt || 'no body'} (${url})`);
-  }
-  try {
-    return await res.json();
-  } catch (err) {
-    throw new Error(`Invalid JSON from API (${url}): ${err.message}`);
-  }
-}
-
-//clean text data 
-const normText = (v) => (v ?? '').trim().toLowerCase();
-const normNum = (v) => (v ?? '').trim();
-
-// map SFU "days" strings to JS weekday numbers
-const dayTokens = {
-  su: 0, sun: 0, sunday: 0,
-  m: 1, mo: 1, mon: 1, monday: 1,
-  t: 2, tu: 2, tue: 2, tues: 2, tuesday: 2,
-  w: 3, we: 3, wed: 3, weds: 3, wednesday: 3,
-  th: 4, thu: 4, thur: 4, thurs: 4, thursday: 4,
-  f: 5, fr: 5, fri: 5, friday: 5,
-  sa: 6, sat: 6, saturday: 6,
-};
-
-function parseDays(daysStr) {
-  if (!daysStr) return [];
-  const out = new Set();
-  const cleaned = daysStr.replace(/[,/]+/g, ' ').trim();
-
-  if (!/\s/.test(cleaned) && /[A-Za-z]{2,}/.test(cleaned)) {
-    cleaned.match(/[A-Za-z][a-z]?/g)?.forEach(tok => {
-      const wk = dayTokens[tok.toLowerCase()];
-      if (wk !== undefined) out.add(wk);
-    });
-  } else {
-    cleaned.split(/\s+/).forEach(tok => {
-      const wk = dayTokens[tok.toLowerCase()];
-      if (wk !== undefined) out.add(wk);
-    });
-  }
-  return [...out].sort();
-}
-
-// build a Date from a date string + time string
-function combineDateTime(dateStr, timeStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (Number.isNaN(+d)) return null;
-  const isoDate = d.toISOString().split('T')[0]; // YYYY-MM-DD
-  const time = (timeStr ?? '00:00').padStart(5, '0');
-  return new Date(`${isoDate}T${time}`);
-}
-
-// expand one schedule item into repeating meetings
-function expandScheduleItem(item, titlePrefix, courseKey) {
-  const {
-    startDate,
-    endDate,
-    startTime,
-    endTime,
-    days,
-    sectionCode,
-    isExam,
-    campus,
-  } = item;
-
-  if (isExam) return []; // ignore exam slots for now
-
-  const rangeStart = combineDateTime(startDate, startTime);
-  const rangeEnd = combineDateTime(endDate, endTime);
-  if (!(rangeStart && rangeEnd)) return [];
-
-  const durationMs =
-    (combineDateTime(startDate, endTime) ?? rangeStart) - rangeStart;
-  const wdays = parseDays(days);
-  if (!wdays.length) return [];
-
-  const events = [];
-  for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
-    if (wdays.includes(d.getDay())) {
-      const evStart = new Date(d);
-      const evEnd = new Date(d.getTime() + durationMs);
-      events.push({
-        id: `${courseKey}-${sectionCode || ''}-${evStart.toISOString()}`,
-        title: titlePrefix + (campus ? ` (${campus})` : ''),
-        start: evStart,
-        end: evEnd,
-        allDay: false,
-        eventType: 'course',
-        courseKey,
-      });
-    }
-  }
-  return events;
-}
-
-// parse full outline to calendar events
-function outlineToEvents(data, courseKey) {
-  const title = data?.info?.title || data?.title || 'Course';
-  const sectionLabel = data?.info?.section || data?.section || '';
-  const prefix = sectionLabel ? `${title} – ${sectionLabel}` : title;
-
-  const scheduleItems = Array.isArray(data?.courseSchedule)
-    ? data.courseSchedule
-    : Array.isArray(data?.schedule)
-      ? data.schedule
-      : Array.isArray(data?.courseSchedule?.sections)
-        ? data.courseSchedule.sections
-        : [];
-
-  if (!scheduleItems.length) return [];
-  const evs = [];
-  scheduleItems.forEach(item => {
-    evs.push(...expandScheduleItem(item, prefix, courseKey));
-  });
-  return evs;
-}
+const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 function toDate(input) {
   if (input instanceof Date) return input;
-  if (input?.seconds) return new Date(input.seconds * 1000); // Firestore Timestamp
-  if (typeof input === "string" || typeof input === "number") return new Date(input); // ISO or raw
-  return null; // fallback
+  if (input?.seconds) return new Date(input.seconds * 1000);
+  if (typeof input === 'string' || typeof input === 'number') return new Date(input);
+  return null;
 }
 
-/* capitalize for the ui */
-function capitalize(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+// day tokens for provider meetings -> JS weekday (0=Sun..6=Sat)
+const dayMap = { Mo: 1, Tu: 2, We: 3, Th: 4, Fr: 5, Sa: 6, Su: 0 };
+
+// Expand normalized provider meetings into repeated events across a date range
+function expandMeetingsBetween(startDateISO, endDateISO, meetings, title, courseKey) {
+  const rangeStart = new Date(startDateISO);
+  const rangeEnd = new Date(endDateISO);
+  const out = [];
+
+  for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+    for (const m of meetings || []) {
+      if (d.getDay() !== dayMap[m.day]) continue;
+
+      const [sh, sm] = (m.start || '00:00').split(':').map(Number);
+      const [eh, em] = (m.end || '00:00').split(':').map(Number);
+      const st = new Date(d);
+      st.setHours(sh ?? 0, sm ?? 0, 0, 0);
+      const en = new Date(d);
+      en.setHours(eh ?? 0, em ?? 0, 0, 0);
+
+      out.push({
+        id: `${courseKey}-${m.day}-${st.toISOString()}`,
+        title: title + (m.campus ? ` (${m.campus})` : ''),
+        start: st,
+        end: en,
+        allDay: false,
+        eventType: 'course',
+        courseKey,
+      });
+    }
+  }
+  return out;
 }
 
 function CalendarView(props) {
-  // use parent value if given, otherwise use default
-  const { events: propEvents, setEvents: propSetEvents } = props;
-  const [internalEvents, setInternalEvents] = useState([]);
-  const events = propEvents !== undefined ? propEvents : internalEvents;
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState('month'); 
-  const updateEvents =
-    typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
+  // External events or internal state
+  const { events: propEvents, setEvents: propSetEvents } = props || {};
+  const [internalEvents, setInternalEvents] = useState([]);
+  const events = propEvents !== undefined ? propEvents : internalEvents;
+  const updateEvents = typeof propSetEvents === 'function' ? propSetEvents : setInternalEvents;
 
-   useEffect(() => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState('month');
+
+  // unified provider flow
+  const [school, setSchool] = useState('sfu'); // 'sfu' | 'ubc'
+  const cat = useCatalog(school);
+  const [selectedSectionId, setSelectedSectionId] = useState('');
+  const selectedSection = cat.sections.find(s => s.id === selectedSectionId);
+
+  useEffect(() => {
+    if (typeof propSetEvents !== 'function') {
+      console.warn(
+        '[CalendarView] No setEvents prop passed in. Using internal event state. ' +
+        'To share events with the rest of your app, do:\n' +
+        '  const [events, setEvents] = useState([]);\n' +
+        '  <CalendarView events={events} setEvents={setEvents} />'
+      );
+    }
+  }, [propSetEvents]);
+
+  // Load saved events on mount
+  useEffect(() => {
+    (async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data.calendarEvents)) {
+            const parsed = data.calendarEvents.map(ev => ({
+              ...ev,
+              start: toDate(ev.start),
+              end: toDate(ev.end),
+            }));
+            updateEvents(parsed);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading saved events:', err);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When school changes, reset downstream selections
+  useEffect(() => {
+    setSelectedSectionId('');
+  }, [school]);
+
+  // add section from provider to calendar (asks for date range)
+  function addProviderSectionToCalendar(section) {
+    const courseTitle =
+      (section?.course?.title) ||
+      `${section?.course?.subject ?? ''} ${section?.course?.code ?? ''}`.trim() ||
+      'Course';
+    const sectionLabel = section?.id ? ` – ${section.id}` : '';
+    const title = `${courseTitle}${sectionLabel}`;
+
+    const startDateISO = window.prompt('Term start date (YYYY-MM-DD):');
+    const endDateISO = window.prompt('Term end date (YYYY-MM-DD):');
+    if (!startDateISO || !endDateISO) {
+      alert('Start and end dates are required to add the section.');
+      return;
+    }
+
+    const courseKey = `${section?.course?.subject}-${section?.course?.code}-${section?.id || ''}`;
+    const evs = expandMeetingsBetween(startDateISO, endDateISO, section.meetings || [], title, courseKey);
+    if (!evs.length) {
+      alert('No meetings found for this section in the selected date range.');
+      return;
+    }
+    updateEvents(prev => [...prev, ...evs]);
+  }
+
+  // manual add event on calendar click
+  const handleSelectSlot = ({ start }) => {
+    const title = window.prompt('New Event Title:');
+    if (!title) return;
+
+    const timeStr = window.prompt('Start time? (HH:MM 24-hr)', '23:59');
+    if (!timeStr) return;
+
+    const [hour, minute] = timeStr.split(':').map(Number);
+    const startTime = new Date(start);
+    startTime.setHours(hour, minute, 0);
+
+    const endTimeStr = window.prompt('End time? (optional, HH:MM 24-hr — press Enter to skip):');
+
+    let endTime;
+    if (endTimeStr) {
+      const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+      endTime = new Date(start);
+      endTime.setHours(endHour, endMinute, 0);
+    } else {
+      endTime = new Date(startTime.getTime() + 60_000);
+    }
+
+    updateEvents(prev => [
+      ...prev,
+      {
+        id: `${startTime.toISOString()}-${Math.random().toString(36).slice(2)}`,
+        title,
+        start: startTime,
+        end: endTime,
+        allDay: false,
+      },
+    ]);
+  };
+
+  // delete event (or all meetings for a course)
+  const handleSelectEvent = (eventObj) => {
+    if (eventObj.eventType === 'course' && eventObj.courseKey) {
+      const delAll = window.confirm(
+        `Delete ALL meetings for:\n${eventObj.title}\n\nOK = delete all for this course\nCancel = delete just this one meeting`
+      );
+      if (delAll) {
+        updateEvents(prev => prev.filter(ev => ev.courseKey !== eventObj.courseKey));
+        return;
+      }
+    }
+    const delOne = window.confirm(`Delete "${eventObj.title}" on ${eventObj.start.toLocaleString()}?`);
+    if (delOne) {
+      updateEvents(prev => prev.filter(ev => ev.id !== eventObj.id));
+    }
+  };
+
+  const calEvents = useMemo(() => events, [events]);
+
+  const saveEvents = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert('You must be logged in to save events.');
+      return;
+    }
+    try {
+      const userDoc = doc(db, 'users', user.uid);
+      await setDoc(userDoc, { calendarEvents: events }, { merge: true });
+      alert('Events saved successfully.');
+    } catch (err) {
+      console.error('Error saving events:', err);
+      alert('Failed to save events.');
+    }
+  };
+
   const loadEvents = async () => {
     const user = auth.currentUser;
-    if (!user) return;
-
+    if (!user) {
+      alert('You must be logged in to load events.');
+      return;
+    }
     try {
-      const userDocRef = doc(db, "users", user.uid);
+      const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (Array.isArray(data.calendarEvents)) {
-          const parsedEvents = data.calendarEvents.map(event => ({
-            ...event,
-            start: new Date(event.start?.seconds ? event.start.seconds * 1000 : event.start),
-            end: new Date(event.end?.seconds ? event.end.seconds * 1000 : event.end),
+          const parsed = data.calendarEvents.map(ev => ({
+            ...ev,
+            start: toDate(ev.start),
+            end: toDate(ev.end),
           }));
-          updateEvents(parsedEvents);
+          updateEvents(parsed);
+          alert('Events loaded successfully.');
+        } else {
+          alert('No calendar events found.');
         }
+      } else {
+        alert('User document does not exist.');
       }
     } catch (err) {
-      console.error("Error loading saved events:", err);
+      console.error('Error loading events:', err);
+      alert('Failed to load events.');
     }
   };
 
-  loadEvents();
-}, []);
-
-
-  // warn if there is no update function
-  useEffect(() => {
-    if (typeof propSetEvents !== 'function') {
-      console.warn(
-        '[CalendarView] No setEvents prop passed in. Using internal event state. ' +
-          'To share events with the rest of your app, do:\n' +
-          '  const [events, setEvents] = useState([]);\n' +
-          '  <CalendarView events={events} setEvents={setEvents} />'
-      );
-    }
-  }, [propSetEvents]);
-
-  // select options
-  const [years, setYears] = useState(['2023', '2024', '2025']);
-  const [terms, setTerms] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [sections, setSections] = useState([]);
-
-  const [formData, setFormData] = useState({
-    year: '',
-    term: '',
-    department: '',
-    course: '',
-    section: '',
-  });
-
-  /* when the CalendarView loads get available academic years */
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await fetchJSON([]);
-        const ys = Array.isArray(data)
-          ? data.map(y => y.value || y.text || String(y)).filter(Boolean)
-          : [];
-        if (ys.length) setYears(ys);
-      } catch (err) {
-        console.warn('Year load failed:', err);
-      }
-    })();
-  }, []);
-
-  /* when year changes, get terms */
-  useEffect(() => {
-    if (!formData.year) {
-      setTerms([]);
-      return;
-    }
-    (async () => {
-      try {
-        const data = await fetchJSON([normNum(formData.year)]);
-        const ts = Array.isArray(data)
-          ? data.map(t => t.value || t.text || String(t)).filter(Boolean)
-          : [];
-        setTerms(ts);
-      } catch (err) {
-        console.warn('Term load failed:', err);
-        setTerms([]);
-      }
-    })();
-  }, [formData.year]);
-
-  /* when term changes, get departments */
-  useEffect(() => {
-    if (!(formData.year && formData.term)) {
-      setDepartments([]);
-      return;
-    }
-    (async () => {
-      try {
-        const data = await fetchJSON([
-          normNum(formData.year),
-          normText(formData.term),
-        ]);
-        const ds = Array.isArray(data)
-          ? data.map(d => d.value || d.text || String(d)).filter(Boolean)
-          : [];
-        setDepartments(ds);
-      } catch (err) {
-        console.warn('Department load failed:', err);
-        setDepartments([]);
-      }
-    })();
-  }, [formData.year, formData.term]);
-
-  /* when department changes, get courses */
-  useEffect(() => {
-    if (!(formData.year && formData.term && formData.department)) {
-      setCourses([]);
-      return;
-    }
-    (async () => {
-      try {
-        const data = await fetchJSON([
-          normNum(formData.year),
-          normText(formData.term),
-          normText(formData.department),
-        ]);
-        const cs = Array.isArray(data)
-          ? data.map(c => c.value || c.text || String(c)).filter(Boolean)
-          : [];
-        setCourses(cs);
-      } catch (err) {
-        console.warn('Course list load failed:', err);
-        setCourses([]);
-      }
-    })();
-  }, [formData.year, formData.term, formData.department]);
-
-  /* when course changes, get sections */
-  useEffect(() => {
-    if (!(formData.year && formData.term && formData.department && formData.course)) {
-      setSections([]);
-      return;
-    }
-    (async () => {
-      try {
-        const data = await fetchJSON([
-          normNum(formData.year),
-          normText(formData.term),
-          normText(formData.department),
-          normNum(formData.course),
-        ]);
-        const ss = Array.isArray(data)
-          ? data.map(s => s.value || s.text || String(s)).filter(Boolean)
-          : [];
-        setSections(ss);
-      } catch (err) {
-        console.warn('Section list load failed:', err);
-        setSections([]);
-      }
-    })();
-  }, [formData.year, formData.term, formData.department, formData.course]);
-
-  /* handles changes for all the drop downs */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-      ...(name === 'year' ? { term: '', department: '', course: '', section: '' } : {}),
-      ...(name === 'term' ? { department: '', course: '', section: '' } : {}),
-      ...(name === 'department' ? { course: '', section: '' } : {}),
-      ...(name === 'course' ? { section: '' } : {}),
-    }));
-  };
-
-  /* get selected courses from SFU and its schedule to calendar*/
-  const fetchCourse = async () => {
-    const { year, term, department, course, section } = formData;
-    if (!year || !term || !department || !course || !section) {
-      alert('Please select year, term, department, course, and section.');
-      return;
-    }
-    try {
-      const courseKey = `${normNum(year)}-${normText(term)}-${normText(department)}-${normNum(course)}-${normText(section)}`;
-      const data = await fetchJSON([
-        normNum(year),
-        normText(term),
-        normText(department),
-        normNum(course),
-        normText(section),
-      ]);
-      console.log('[CalendarView] Outline payload:', data);
-
-      const courseEvents = outlineToEvents(data, courseKey);
-      if (!courseEvents.length) {
-        alert(
-          `No published schedule data for:\n${year} / ${term} / ${department} / ${course} / ${section}\n\n` +
-          'The outline may not be published yet, or it may have no scheduled meeting times.'
-        );
-        return;
-      }
-      updateEvents(prev => [...prev, ...courseEvents]);
-    } catch (err) {
-      alert(
-        `Could not load that section.\n\n${err.message}\n\n` +
-        'Double-check that the section exists (e.g., D100 vs D200) and that the outline is published.'
-      );
-    }
-  };
-
-  /* manually add event */
-const handleSelectSlot = ({ start }) => {
-  const title = window.prompt('New Event Title:');
-  if (!title) return;
-
-  const timeStr = window.prompt('Start time? (HH:MM 24‑hr)', '23:59');
-  if (!timeStr) return;
-
-  const [hour, minute] = timeStr.split(':').map(Number);
-  const startTime = new Date(start);
-  startTime.setHours(hour, minute, 0);
-
-  const endTimeStr = window.prompt(
-    'End time? (optional, HH:MM 24‑hr — press Enter to skip):'
-  );
-
-  let endTime;
-  if (endTimeStr) {
-    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-    endTime = new Date(start);
-    endTime.setHours(endHour, endMinute, 0);
-  } else {
-    endTime = new Date(startTime.getTime() + 60_000);
-  }
-
-  updateEvents(prev => [
-    ...prev,
-    {
-      id: `${startTime.toISOString()}-${Math.random().toString(36).slice(2)}`,
-      title,
-      start: startTime,
-      end: endTime,
-      allDay: false,
-    },
-  ]);
-};
-
-
-
-
-  /* delete events */
-  const handleSelectEvent = (eventObj /*, e */) => {
-    // delete all option for course
-    if (eventObj.eventType === 'course' && eventObj.courseKey) {
-      const delAll = window.confirm(
-        `Delete ALL meetings for:\n${eventObj.title}\n\nOK = delete all for this course\nCancel = delete just this one meeting`
-      );
-      if (delAll) {
-        updateEvents(prev => prev.filter(ev => ev.courseKey !== eventObj.courseKey));
-        return;
-      }
-    }
-    const delOne = window.confirm(
-      `Delete "${eventObj.title}" on ${eventObj.start.toLocaleString()}?`
-    );
-    if (delOne) {
-      updateEvents(prev => prev.filter(ev => ev.id !== eventObj.id));
-    }
-  };
-
-  const calEvents = useMemo(() => events, [events]);
-  const saveEvents = async () => {
-  const user = auth.currentUser;
-  if (!user) {
-    alert("You must be logged in to save events.");
-    return;
-  }
-
-  try {
-    const userDoc = doc(db, "users", user.uid);
-    await setDoc(userDoc, { calendarEvents: events }, { merge: true });
-    alert("Events saved successfully.");
-  } catch (err) {
-    console.error("Error saving events:", err);
-    alert("Failed to save events.");
-  }
-};
-const loadEvents = async () => {
-  const user = auth.currentUser;
-  if (!user) {
-    alert("You must be logged in to load events.");
-    return;
-  }
-
-  try {
-    const userDocRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (Array.isArray(data.calendarEvents)) {
-        const parsedEvents = data.calendarEvents.map(ev => ({
-          ...ev,
-          start: toDate(ev.start),
-          end: toDate(ev.end),
-        }));
-        updateEvents(parsedEvents); // ✅ Use parsed version
-        alert("Events loaded successfully.");
-      } else {
-        alert("No calendar events found.");
-      }
-    } else {
-      alert("User document does not exist.");
-    }
-  } catch (err) {
-    console.error("Error loading events:", err);
-    alert("Failed to load events.");
-  }
-};
-
-
-
-  return (
+  return (
     <div className="calendar-container">
       <div className="calendar-header">
         <h2 className="calendar-title">Create Your Schedule Here!</h2>
-        <p className="calendar-subtitle">Import SFU courses or add custom events to organize your time</p>
+        <p className="calendar-subtitle">Import courses (SFU/UBC) or add custom events to organize your time</p>
       </div>
 
       {/* Course Import Section */}
       <div className="course-import-section">
-        <h3 className="section-title">Import SFU Courses</h3>
+        <h3 className="section-title">Import Courses</h3>
+
+        {/* School */}
+        <div className="selector-group" style={{ marginTop: 8 }}>
+          <label className="selector-label">School</label>
+          <select
+            value={school}
+            onChange={(e) => { setSchool(e.target.value); setSelectedSectionId(''); }}
+            className="selector-input"
+          >
+            <option value="sfu">SFU</option>
+            <option value="ubc">UBC (Unofficial)</option>
+            {/* Later: Langara, Douglas, KPU */}
+          </select>
+        </div>
+
         <div className="course-selectors">
           {/* Year */}
           <div className="selector-group">
             <label className="selector-label">Year</label>
-            <select 
-              name="year" 
-              value={formData.year} 
-              onChange={handleChange}
+            <select
+              value={cat.year}
+              onChange={(e) => { cat.setYear(e.target.value); setSelectedSectionId(''); }}
+              disabled={!school}
               className="selector-input"
             >
               <option value="">Select Year</option>
-              {years.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
+              {cat.years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
 
@@ -522,16 +285,13 @@ const loadEvents = async () => {
           <div className="selector-group">
             <label className="selector-label">Term</label>
             <select
-              name="term"
-              value={formData.term}
-              onChange={handleChange}
-              disabled={!formData.year}
+              value={cat.termId}
+              onChange={(e) => { cat.setTermId(e.target.value); setSelectedSectionId(''); }}
+              disabled={!cat.year}
               className="selector-input"
             >
               <option value="">Select Term</option>
-              {terms.map(t => (
-                <option key={t} value={t}>{capitalize(t)}</option>
-              ))}
+              {cat.terms.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
 
@@ -539,32 +299,30 @@ const loadEvents = async () => {
           <div className="selector-group">
             <label className="selector-label">Department</label>
             <select
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              disabled={!formData.term}
+              value={cat.subject}
+              onChange={(e) => { cat.setSubject(e.target.value); setSelectedSectionId(''); }}
+              disabled={!cat.termId}
               className="selector-input"
             >
               <option value="">Select Department</option>
-              {departments.map(d => (
-                <option key={d} value={d}>{d.toUpperCase()}</option>
-              ))}
+              {cat.subjects.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
             </select>
           </div>
 
-          {/* Course number */}
+          {/* Course */}
           <div className="selector-group">
             <label className="selector-label">Course</label>
             <select
-              name="course"
-              value={formData.course}
-              onChange={handleChange}
-              disabled={!formData.department}
+              value={cat.courseCode}
+              onChange={(e) => { const v = e.target.value; cat.setCourseCode(v); setSelectedSectionId(''); if (v) cat.loadSections(v); }}
+              disabled={!cat.subject}
               className="selector-input"
             >
               <option value="">Select Course</option>
-              {courses.map(c => (
-                <option key={c} value={c}>{c.toUpperCase()}</option>
+              {cat.courses.map(c => (
+                <option key={`${c.subject}-${c.code}`} value={c.code}>
+                  {c.subject} {c.code} — {c.title}
+                </option>
               ))}
             </select>
           </div>
@@ -573,40 +331,43 @@ const loadEvents = async () => {
           <div className="selector-group">
             <label className="selector-label">Section</label>
             <select
-              name="section"
-              value={formData.section}
-              onChange={handleChange}
-              disabled={!formData.course}
+              value={selectedSectionId}
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              disabled={!cat.courseCode || !cat.sections.length}
               className="selector-input"
             >
               <option value="">Select Section</option>
-              {sections.map(s => (
-                <option key={s} value={s}>{s.toUpperCase()}</option>
+              {cat.sections.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.id}{s.instructor ? ` — ${s.instructor}` : ''}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         <div className="course-actions">
-          <button 
-            onClick={fetchCourse} 
-            disabled={!formData.section}
+          <button
+            onClick={() => selectedSection && addProviderSectionToCalendar(selectedSection)}
+            disabled={!selectedSection}
             className="btn btn-primary"
           >
             Add Course to Calendar
           </button>
+
+          {school === 'ubc' && (
+            <p className="text-xs opacity-70 mt-2">
+              Data source: UBCCourses (unofficial). Availability may vary.
+            </p>
+          )}
         </div>
       </div>
 
       {/* Calendar Actions */}
       <div className="calendar-actions">
         <div className="action-buttons">
-          <button onClick={saveEvents} className="btn btn-secondary">
-            💾 Save Calendar
-          </button>
-          <button onClick={loadEvents} className="btn btn-secondary">
-            📂 Load Saved Events
-          </button>
+          <button onClick={saveEvents} className="btn btn-secondary">💾 Save Calendar</button>
+          <button onClick={loadEvents} className="btn btn-secondary">📂 Load Saved Events</button>
         </div>
         <div className="calendar-info">
           <p>💡 Click on any date to add a custom event</p>
@@ -643,28 +404,20 @@ const loadEvents = async () => {
   );
 }
 
-function CustomEvent({ event, view }) {
+function CustomEvent({ event }) {
   const startStr = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const endStr =
-    event.end &&
-    event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+  const endStr = event.end && event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const isSameMinute = !endStr || Math.abs(event.end - event.start) <= 60_000;
   const showTime = isSameMinute ? startStr : `${startStr} – ${endStr}`;
 
-  /* remove section numbers from calendar */
-  const cleanTitle = event.title.split('–')[0].trim();
-  const campus = event.title.match(/\((.*?)\)/)?.[1] || '';
+  const cleanTitle = String(event.title || '').split('–')[0].trim();
+  const campus = String(event.title || '').match(/\((.*?)\)/)?.[1] || '';
 
   return (
     <div className="custom-event">
       <div className="event-title">{cleanTitle}</div>
       <div className="event-time">{showTime}</div>
-      {campus && (
-        <div className="event-campus">
-          {campus} Campus
-        </div>
-      )}
+      {campus && <div className="event-campus">{campus} Campus</div>}
     </div>
   );
 }
